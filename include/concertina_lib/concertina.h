@@ -64,6 +64,9 @@ enum
     Bb2 = Ds2,
     Eb3 = As3,
     Bb3 = Ds3,
+    Eb4 = As4,
+    Bb4 = Ds4,
+
 };
 
 #endif

@@ -8,13 +8,14 @@
 #include "concertina_lib/concertina.h"
 // 0X3C+SA0 - 0x3C or 0x3D
 #define I2C_ADDRESS 0x3C
-
+#include <Tone.h>
 // Define proper RST_PIN if required.
 #define RST_PIN -1
 #define BUTTON_PRESSED 1
 #define BUTTON_RELEASED 0
 
 SSD1306AsciiWire oled;
+Tone tone1;
 
 RotaryEncoder encoder(4, 5, RotaryEncoder::LatchMode::TWO03);
 
@@ -46,21 +47,21 @@ int pinButton[] = {
 };
 
 int pousser[] = {
-  Bn2, As2, En2, An2, Dn2, Cn2, 
-  An2, An2, Fn2, Gn2, Bn2, Fs2, 
-  Gs2, Ds2, Cs2, Bn2, Dn2, En2, 
-  Dn2, Bn2, An2, Ds2, Fn2, Gn2, 
-  As2, Bn2, Fs2, Ds2, Dn2, An2, 
-  Gn2, Fn2, Cn2, As2, Gn2, An2
+  Gn2, An2, Cs3, Cn3, Gs2, Bn2,
+  En2, Gn2, Cn2, Cs2, Gn2, Dn2,
+  Bn1, An1, En1, Cn1, Dn1, Dn3,
+  Dn1, Dn1, Fn4, Dn1, Bn4, En4,
+  Gn4, Cn4, Cs4, Dn4, Gn3, Fs3,
+  Bn3, En3, An3, Gn3, Dn1, Dn1,
 };
 
 int tirer[] = {
-  En2, Cs2, Dn2, Gn2, An2, Dn2, 
-  Cn2, Bn2, Gn2, Gs2, Cn2, Gn2, 
-  Fs2, Cs2, Ds2, Bn2, Dn2, Gn2, 
-  An2, En2, Bn2, As2, En2, Cn2, 
-  An2, Gn2, Dn2, Cs2, Cn2, Gn2, 
-  An2, En2, Bn2, Gs2, Gn2, An2
+  An2, Gn2, Ds3, Bn2, Bb2, Cn3,
+  Fn2, An2, Dn2, Fs2, Bn1, Fs2,
+  Dn2, Bb1, Fn1, Gn1, Dn1, En3,
+  Dn1, Dn1, An4, Dn1, Fs4, Bn3,
+  En4, An3, Ds4, Cn4, Fn3, Bb3,
+  An3, Dn3, Gn3, Fs3, Dn1, Dn1
 };
 int pousserTirer = 10;
 int buttonEncoder = 3;
@@ -148,7 +149,7 @@ void note(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity)
         { // on tire sur le soufflet et on appuie sur le bouton
           if (oldStateTirer[index] == 0)
           {
-            displayNote(oled, sens_soufflet, noteB, index);
+
             noteOn(noteB, noteA, noteB, newOctave, velocity);
             oldStateTirer[index] = BUTTON_PRESSED;
             if (oldStatePousser[index] == BUTTON_PRESSED)
@@ -180,6 +181,8 @@ void note(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity)
 int oldStatePousserTirer = 0;
 
 void setup() {
+  tone1.begin(A1);
+
   pinMode(pousserTirer, INPUT);
   digitalWrite(pousserTirer, HIGH);
 
@@ -196,8 +199,10 @@ void setup() {
 #endif // RST_PIN >= 0
   oled.setFont(Adafruit5x7);
   oled.displayRemap(false);
-  Serial.begin(9600);
-  
+
+  MIDI.begin(1);
+  Serial.begin(115200);
+
   for (size_t pin = 0; pin < 36; pin++) {
     pinMode(pinButton[pin],INPUT);
     digitalWrite(pinButton[pin],HIGH);
@@ -212,6 +217,7 @@ void loop() {
   for (int i = 0; i < 36; i++)
   {
     note(pousserTirerState, i, 3, 127);
+    tone1.play(NOTE_B3);
   }
 
 }
