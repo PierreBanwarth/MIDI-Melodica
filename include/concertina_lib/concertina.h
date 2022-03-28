@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include <MIDI.h>
 
+
 enum
 {
     // DEFINING MIDI notes
