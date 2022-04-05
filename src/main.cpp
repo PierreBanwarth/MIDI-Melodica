@@ -14,8 +14,15 @@
 #define BUTTON_PRESSED 1
 #define BUTTON_RELEASED 0
 
+#include <tables/sin2048_int8.h> // sine table for oscillator
+
+#include <MozziGuts.h>
+#include <Oscil.h>
+#include <tables/brownnoise8192_int8.h> // recorded audio wavetable
+#include <mozzi_rand.h>
+Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> aSin(SIN2048_DATA);
+
 SSD1306AsciiWire oled;
-Tone synth;
 
 RotaryEncoder encoder(4, 5, RotaryEncoder::LatchMode::TWO03);
 
@@ -28,6 +35,15 @@ uint8_t oldStatePousser[] = {
   0, 0, 0, 0, 0, 0,
 };
 uint8_t oldStateTirer[] = {
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0,
+};
+
+uint8_t bourdonActif[] = {
   0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0,
@@ -81,7 +97,7 @@ int tirerSynth[] = {
 };
 
 
-
+int onOffSynth = 0;
 int pousserTirer = 10;
 int buttonEncoder = 3;
 int stateButtonEncoder = HIGH;
@@ -203,8 +219,10 @@ void note(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity)
     }
   }
 }
+
 void noteBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity)
-{ //, uint8_t oldStatePousser, uint8_t oldStateTirer
+{
+  //, uint8_t oldStatePousser, uint8_t oldStateTirer
   uint8_t newOctave = 12 * octave;
   // velocity = 127;
   digitalWrite(pinButton[index], HIGH);
@@ -212,19 +230,75 @@ void noteBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int veloc
   // digitalWrite(pinButton[index], LOW);
   uint8_t noteA = pousser[index];
   uint8_t noteB = tirer[index];
-  // higher velocity usually makes MIDI instruments louder
-  if (bouton == LOW)
+  if (pousser[index] != 0 || tirer[index] != 0)
   {
-    // on pousse sur le bouton et sur le soufflet
-    if(oldStatePousser[index] == BUTTON_RELEASED){
-      noteOn(noteA, noteA, noteB, newOctave, velocity);
+    if (oldStatePousser[index] > 1)
+    { // Tune started too recently to be changed
+      oldStatePousser[index]--;
     }
-    if(oldStatePousser[index] == BUTTON_RELEASED){
-      noteOff(noteA, noteA, noteB, newOctave);
+    else if (oldStateTirer[index] > 1)
+    { // Tune started too recently to be changed
+      oldStateTirer[index]--;
+    }
+    else
+    {
+      // higher velocity usually makes MIDI instruments louder
+      if (bouton == LOW)
+      {
+        if (sens_soufflet == LOW)
+        {
+          // on pousse sur le bouton et sur le soufflet
+          if (oldStatePousser[index] == BUTTON_RELEASED)
+          {
+            if (bourdonActif[index] == 0){
+              noteOn(noteA, noteA, noteB, newOctave, velocity);
+              bourdonActif[index] = 1;
+            }else{
+              MIDI.sendNoteOff(noteA + newOctave, 0, 1);
+              bourdonActif[index] = 0;
+            }
+            oldStatePousser[index] = BUTTON_PRESSED;
+            if (oldStateTirer[index] == BUTTON_PRESSED)
+            {
+              oldStateTirer[index] = BUTTON_RELEASED;
+            }
+          }
+        }
+        else
+        { // on tire sur le soufflet et on appuie sur le bouton
+          if (oldStateTirer[index] == 0)
+          {
 
+            if (bourdonActif[index] == 0)
+            {
+              noteOn(noteA, noteA, noteB, newOctave, velocity);
+              bourdonActif[index] = 1;
+            }
+            else
+            {
+              MIDI.sendNoteOff(noteA + newOctave, 0, 1);
+              bourdonActif[index] = 0;
+            }
+            oldStateTirer[index] = BUTTON_PRESSED;
+            if (oldStatePousser[index] == BUTTON_PRESSED)
+            {
+              oldStatePousser[index] = BUTTON_RELEASED;
+            }
+          }
+        }
+      }
+      else
+      {
+        if (oldStatePousser[index] == BUTTON_PRESSED)
+        {
+          oldStatePousser[index] = BUTTON_RELEASED;
+        }
+        if (oldStateTirer[index] == BUTTON_PRESSED)
+        {
+          oldStateTirer[index] = BUTTON_RELEASED;
+        }
+      }
     }
-  }else{
-      oldStatePousser[index] = BUTTON_RELEASED;
   }
 }
 
@@ -245,7 +319,7 @@ int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave)
         // on pousse sur le bouton et sur le soufflet
         if (oldStatePousser[index] == BUTTON_RELEASED)
         {
-          synth.play(noteSynthA);
+          aSin.setFreq(noteSynthA);
           oldStatePousser[index] = BUTTON_PRESSED;
           if (oldStateTirer[index] == BUTTON_PRESSED)
           {
@@ -257,7 +331,7 @@ int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave)
       { // on tire sur le soufflet et on appuie sur le bouton
         if (oldStateTirer[index] == 0)
         {
-          synth.play(noteSynthB);
+          aSin.setFreq(noteSynthB);
           oldStateTirer[index] = BUTTON_PRESSED;
           if (oldStatePousser[index] == BUTTON_PRESSED)
           {
@@ -349,8 +423,25 @@ void menuSelector(){
   stateButtonEncoder = state;
 
 }
+void updateControl()
+{
+  if (onOffSynth == 0)
+  {
+    stopMozzi();
+  }
+  else{
+    startMozzi();
+  }
+  // put changing controls in here
+}
+int updateAudio()
+{
+  return aSin.next(); // return an int signal centred around 0
+}
+
 void setup() {
-  synth.begin(A1);
+
+  startMozzi();
 
   pinMode(pousserTirer, INPUT);
   digitalWrite(pousserTirer, HIGH);
@@ -380,6 +471,8 @@ void setup() {
 
 void loop() {
   menuSelector();
+  audioHook();
+
   if(mode == "MIDI"){
     int pousserTirerState = digitalRead(pousserTirer);
     for (int i = 0; i < 36; i++)
@@ -393,18 +486,17 @@ void loop() {
   }
   else{
     int pousserTirerState = digitalRead(pousserTirer);
-    int sum = 0;
+    onOffSynth = 0;
     for (int i = 0; i < 36; i++)
     {
-      sum += noteSynth(pousserTirerState,i, octave);
+      onOffSynth += noteSynth(pousserTirerState, i, octave);
     }
+    
     // int sum =0;
     // for(int i=0; i<36; i++){
     //   sum += oldStatePousser[i]+oldStatePousser[i];
     // }
-    if (sum==0){
-      synth.stop();
-    }
+    
 
 
   }
