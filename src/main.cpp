@@ -232,42 +232,15 @@ void noteBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int veloc
   uint8_t noteB = tirer[index];
   if (pousser[index] != 0 || tirer[index] != 0)
   {
-    if (oldStatePousser[index] > 1)
-    { // Tune started too recently to be changed
-      oldStatePousser[index]--;
+    // on pousse sur le bouton et sur le soufflet
+    if(oldStatePousser[index] == BUTTON_RELEASED){
+      noteOn(noteA, noteA, noteB, newOctave, velocity);
+      oldStatePousser[index] = BUTTON_PRESSED;
+
     }
-    else if (oldStateTirer[index] > 1)
-    { // Tune started too recently to be changed
-      oldStateTirer[index]--;
-    }
-    else
-    {
-      // higher velocity usually makes MIDI instruments louder
-      if (bouton == LOW)
-      {
-        if (sens_soufflet == LOW)
-        {
-          // on pousse sur le bouton et sur le soufflet
-          if (oldStatePousser[index] == BUTTON_RELEASED)
-          {
-            if (bourdonActif[index] == 0){
-              noteOn(noteA, noteA, noteB, newOctave, velocity);
-              bourdonActif[index] = 1;
-            }else{
-              MIDI.sendNoteOff(noteA + newOctave, 0, 1);
-              bourdonActif[index] = 0;
-            }
-            oldStatePousser[index] = BUTTON_PRESSED;
-            if (oldStateTirer[index] == BUTTON_PRESSED)
-            {
-              oldStateTirer[index] = BUTTON_RELEASED;
-            }
-          }
-        }
-        else
-        { // on tire sur le soufflet et on appuie sur le bouton
-          if (oldStateTirer[index] == 0)
-          {
+    if(oldStatePousser[index] == BUTTON_PRESSED){
+      noteOff(noteA, noteA, noteB, newOctave);
+      oldStatePousser[index] = BUTTON_RELEASED;
 
             if (bourdonActif[index] == 0)
             {
