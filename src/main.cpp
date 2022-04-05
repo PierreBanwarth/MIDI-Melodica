@@ -218,13 +218,14 @@ void noteBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int veloc
     // on pousse sur le bouton et sur le soufflet
     if(oldStatePousser[index] == BUTTON_RELEASED){
       noteOn(noteA, noteA, noteB, newOctave, velocity);
-    }
-    if(oldStatePousser[index] == BUTTON_RELEASED){
-      noteOff(noteA, noteA, noteB, newOctave);
+      oldStatePousser[index] = BUTTON_PRESSED;
 
     }
-  }else{
+    if(oldStatePousser[index] == BUTTON_PRESSED){
+      noteOff(noteA, noteA, noteB, newOctave);
       oldStatePousser[index] = BUTTON_RELEASED;
+
+    }
   }
 }
 
