@@ -6,96 +6,41 @@
 #include "SSD1306AsciiWire.h"
 #include "RotaryEncoder.h"// RotaryEncoder v1.5.0 library by Matthais Hertel
 #include "concertina_lib/concertina.h"
+
+#include <MozziGuts.h>
+#include <Oscil.h>
+
+#include <tables/cos2048_int8.h>
+#include <tables/sin2048_int8.h> //Wavetables for Oscillators
+#include <tables/saw2048_int8.h>
+#include <tables/triangle_valve_2_2048_int8.h>
+
+#include <mozzi_rand.h>
+#include <ADSR.h>
 // 0X3C+SA0 - 0x3C or 0x3D
+
 #define I2C_ADDRESS 0x3C
-#include <Tone.h>
+
 // Define proper RST_PIN if required.
 #define RST_PIN -1
 #define BUTTON_PRESSED 1
 #define BUTTON_RELEASED 0
 
-#include <tables/sin2048_int8.h> // sine table for oscillator
+ADSR <CONTROL_RATE, AUDIO_RATE> envelope; // notre enveloppe
 
-#include <MozziGuts.h>
-#include <Oscil.h>
-#include <tables/brownnoise8192_int8.h> // recorded audio wavetable
-#include <mozzi_rand.h>
-Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> aSin(SIN2048_DATA);
+
+// Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> oscil1(SIN2048_DATA);
+// Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> oscil2(SIN2048_DATA);
+// Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> oscil1(SIN2048_DATA);
+// Oscil<COS2048_NUM_CELLS, AUDIO_RATE> oscil2(COS2048_DATA);
+
+Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> oscil1;
+Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> oscil2;
+
 
 SSD1306AsciiWire oled;
 
 RotaryEncoder encoder(4, 5, RotaryEncoder::LatchMode::TWO03);
-
-uint8_t oldStatePousser[] = {
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-};
-uint8_t oldStateTirer[] = {
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-};
-
-uint8_t bourdonActif[] = {
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0,
-};
-
-int pinButton[] = {
-  6,7,8,9,22,23,
-  24,25,26,27,28,29,
-  30,31,32,33,34,35,
-  36,37,38,39,40,41,
-  42,43,44,45,46,47,
-  48,49,50,51,52,53
-};
-
-int pousser[] = {
-  Gn2, An2, Cs3, Cn3, Gs2, Bn2,
-  En2, Gn2, Cn2, Cs2, Gn2, Dn2,
-  Bn1, An1, En1, Cn1, Dn1, Dn3,
-  Dn1, Dn1, Fn4, An1, Bn4, En4,
-  Gn4, Cn4, Cs4, Dn4, Gn3, Fs3,
-  Bn3, En3, An3, Gn3, An1, Dn1,
-};
-
-int tirer[] = {
-  An2, Gn2, Ds3, Bn2, Bb2, Cn3,
-  Fn2, An2, Dn2, Fs2, Bn1, Fs2,
-  Dn2, Bb1, Fn1, Gn1, Dn1, En3,
-  Dn1, Dn1, An4, An1, Fs4, Bn3,
-  En4, An3, Ds4, Cn4, Fn3, Bb3,
-  An3, Dn3, Gn3, Fs3, An1, Dn1
-};
-int pousserSynth[] = {
-  NOTE_G2, NOTE_A2, NOTE_CS3, NOTE_C3, NOTE_GS2, NOTE_B2,
-  NOTE_E2, NOTE_G2, NOTE_C2, NOTE_CS2, NOTE_G2, NOTE_D2,
-  NOTE_B1, NOTE_A1, NOTE_E1, NOTE_C1, NOTE_D1, NOTE_D3,
-  NOTE_D1, NOTE_D1, NOTE_F4, NOTE_A1, NOTE_B4, NOTE_E4,
-  NOTE_G4, NOTE_C4, NOTE_CS4, NOTE_D4, NOTE_G3, NOTE_FS3,
-  NOTE_B3, NOTE_E3, NOTE_A3, NOTE_G3, NOTE_D1, NOTE_D1,
-};
-
-int tirerSynth[] = {
-  NOTE_A2, NOTE_G2, NOTE_DS3, NOTE_B2, NOTE_AS2, NOTE_C3,
-  NOTE_F2, NOTE_A2, NOTE_D2, NOTE_FS2, NOTE_B1, NOTE_FS2,
-  NOTE_D2, NOTE_AS1, NOTE_F1, NOTE_G1, NOTE_D1, NOTE_E3,
-  NOTE_D1, NOTE_D1, NOTE_A4, NOTE_A1, NOTE_FS4, NOTE_B3,
-  NOTE_E4, NOTE_A3, NOTE_DS4, NOTE_C4, NOTE_F3, NOTE_AS3,
-  NOTE_A3, NOTE_D3, NOTE_G3, NOTE_FS3, NOTE_D1, NOTE_D1
-};
-
 
 int onOffSynth = 0;
 int pousserTirer = 10;
@@ -104,30 +49,24 @@ int stateButtonEncoder = HIGH;
 int oldStatePousserTirer = 0;
 int encoderPosition;
 int octave = 4;
-
+int globalFrequence;
+int stateWave = 1;
 String menuActiveItem = "MAIN";
-String mode = "MIDI";
+String mode = "SYNTH";
 
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial, MIDI);
 
-void displayNote(SSD1306AsciiWire oled, int sensSoufflet, int note, int index){
+void displayNote(int note){
   oled.clear();
-  if (sensSoufflet == 0)
-  {
-    oled.println("Pousser");
-  }
-  else
-  {
-    oled.println("Tirer");
-  }
   oled.print("Note :");
   oled.println((int)note);
-  oled.print("Pin :");
-  oled.println((int)pinButton[index]);
+}
+void displayswitch(String s){
+  oled.clear();
+  oled.print("Note :");
 }
     // Note using drone
-void noteOn(int noteToPlay, int noteA, int noteB, int octave, int velocity)
-{
+void noteOn(int noteToPlay, int noteA, int noteB, int octave, int velocity){
   if (noteA == noteB)
   {
     MIDI.sendNoteOn(noteToPlay + octave, velocity * 2 / 3, 1);
@@ -139,8 +78,7 @@ void noteOn(int noteToPlay, int noteA, int noteB, int octave, int velocity)
 
 }
 
-void noteOff(int noteToShutdown, int noteA, int noteB, int octave)
-{
+void noteOff(int noteToShutdown, int noteA, int noteB, int octave){
   if (noteA != noteB)
   {
     MIDI.sendNoteOff(noteToShutdown + octave, 0, 1);
@@ -226,7 +164,6 @@ void noteBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int veloc
   uint8_t newOctave = 12 * octave;
   // velocity = 127;
   digitalWrite(pinButton[index], HIGH);
-  uint8_t bouton = digitalRead(pinButton[index]);
   // digitalWrite(pinButton[index], LOW);
   uint8_t noteA = pousser[index];
   uint8_t noteB = tirer[index];
@@ -258,30 +195,68 @@ void noteBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int veloc
               oldStatePousser[index] = BUTTON_RELEASED;
             }
           }
-        }
-      }
-      else
-      {
-        if (oldStatePousser[index] == BUTTON_PRESSED)
-        {
-          oldStatePousser[index] = BUTTON_RELEASED;
-        }
-        if (oldStateTirer[index] == BUTTON_PRESSED)
-        {
-          oldStateTirer[index] = BUTTON_RELEASED;
-        }
-      }
-    }
+          else
+
+          {
+            if (oldStatePousser[index] == BUTTON_PRESSED)
+            {
+              oldStatePousser[index] = BUTTON_RELEASED;
+            }
+            if (oldStateTirer[index] == BUTTON_PRESSED)
+            {
+              oldStateTirer[index] = BUTTON_RELEASED;
+            }
+          }
   }
+}
+// SYNTH CODE
+void setTableSin() {
+  oscil1.setTable(SIN2048_DATA);
+  oscil2.setTable(SIN2048_DATA);
+  displayswitch("sin");
+}
+void setTableTriangle() {
+  oscil1.setTable(TRIANGLE_VALVE_2_2048_DATA);
+  oscil2.setTable(TRIANGLE_VALVE_2_2048_DATA);
+  displayswitch("triangle");
+
+}
+void setTableSaw() {
+  oscil1.setTable(SAW2048_DATA);
+  oscil2.setTable(SAW2048_DATA);
+  displayswitch("triangle");
+
+}
+
+void noteOnSynth(int frequence){
+  oscil1.setFreq(frequence);
+  oscil2.setFreq(frequence/2);
+  envelope.noteOn(); // on joue la note
+
 }
 
 int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave)
 {
+  digitalWrite(pinButton[index], HIGH);
   uint8_t bouton = digitalRead(pinButton[index]);
-  octave = pow(2, octave);
-
-  int noteSynthA = pousserSynth[index]*octave;
-  int noteSynthB = tirerSynth[index]*octave;
+  int newOctave = 1;
+  if (octave == 1){
+    newOctave = 1;
+  }
+  if (octave == 2){
+    newOctave = 4;
+  }
+  if (octave == 3){
+    newOctave = 8;
+  }
+  if (octave == 4){
+    newOctave = 16;
+  }
+  if (octave == 5){
+    newOctave = 32;
+  }
+  int noteSynthA = pousserSynth[index]*newOctave;
+  int noteSynthB = tirerSynth[index]*newOctave;
 
   if (pousser[index] != 0 || tirer[index] != 0)
   {
@@ -292,7 +267,8 @@ int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave)
         // on pousse sur le bouton et sur le soufflet
         if (oldStatePousser[index] == BUTTON_RELEASED)
         {
-          aSin.setFreq(noteSynthA);
+          // play note
+          noteOnSynth(noteSynthA);
           oldStatePousser[index] = BUTTON_PRESSED;
           if (oldStateTirer[index] == BUTTON_PRESSED)
           {
@@ -302,9 +278,9 @@ int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave)
       }
       else
       { // on tire sur le soufflet et on appuie sur le bouton
-        if (oldStateTirer[index] == 0)
+        if (oldStateTirer[index] == BUTTON_RELEASED)
         {
-          aSin.setFreq(noteSynthB);
+          noteOnSynth(noteSynthB);
           oldStateTirer[index] = BUTTON_PRESSED;
           if (oldStatePousser[index] == BUTTON_PRESSED)
           {
@@ -328,6 +304,42 @@ int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave)
       return 0;
     }
   }
+  return 0;
+}
+// niveau_attaque, niveau_chute, temps_attaque, temps_chute, temps_entretien, temps_extinction, fréquence
+// 255, 255, 30, 30, 2000, 30, 300
+//
+
+
+void updateControl()
+{
+  byte attack_level = 127;
+  byte decay_level = 255;
+  envelope.setReleaseLevel(0);
+  envelope.setADLevels(attack_level,decay_level);
+  int attack = 0;
+  int decay = 0;
+  int release_ms = 0; // times for the attack, decay, and release of envelope
+  int sustain  = 0; //sustain time set to zero so notes can be played as long as key is presssed without being effect by previus touch
+  envelope.setTimes(attack,decay,sustain,release_ms);
+
+  int pousserTirerState = digitalRead(pousserTirer);
+  int onOffSynth = 0;
+
+  for (int i = 0; i < 36; i++)
+  {
+    onOffSynth += noteSynth(pousserTirerState, i, octave);
+  }
+  if(onOffSynth == 0){
+    envelope.noteOff();
+  }
+
+  // put changing controls in here
+}
+int updateAudio()
+{
+  // long test = (long) envelope.next() * (oscil1.next() + oscil2.next());
+  return (int) (envelope.next() * (oscil1.next()+oscil2.next() ))>>8;
 }
 
 void display(int newPos, String item){
@@ -338,23 +350,50 @@ void display(int newPos, String item){
     oled.print("Oct : ");
     oled.print(newPos%6);
     oled.print(" ");
-  }else if (menuActiveItem =="OUTPUT") {
+  }else if(menuActiveItem == "MAIN"){
     if(newPos%2 == 0){
-      oled.println("> Midi");
+      oled.println("> Octave");
       oled.println("  Synth");
     }
     else if(newPos%2 == 1){
-      oled.println("  Midi");
+      oled.println("  Octave");
       oled.println("> Synth");
     }
-  }else if(menuActiveItem == "MAIN"){
+  }else if(menuActiveItem == "SYNTH"){
     if(newPos%2 == 0){
-      oled.println("  Output");
-      oled.println("> Octave");
+      oled.println("> Wave");
+      oled.println("  Gain");
     }
     else if(newPos%2 == 1){
-      oled.println("> Ouptut");
-      oled.println("  Octave");
+      oled.println("  Wave");
+      oled.println("> Gain");
+    }
+  }else if(menuActiveItem == "WAVE"){
+    if(newPos%4 == 0){
+      oled.println("> Sin");
+      oled.println("  Cos");
+      oled.println("  Saw");
+      oled.println("  Back");
+
+    }
+    else if(newPos%4 == 1){
+      oled.println("  Sin");
+      oled.println("> Cos");
+      oled.println("  Saw");
+      oled.println("  Back");
+
+    }
+    else if(newPos%4 == 2){
+      oled.println("  Sin");
+      oled.println("  Cos");
+      oled.println("> Saw");
+      oled.println("  Back");
+    }
+    else if(newPos%4 == 3){
+      oled.println("  Sin");
+      oled.println("  Cos");
+      oled.println("  Saw");
+      oled.println("> Back");
     }
   }
 }
@@ -373,21 +412,30 @@ void menuSelector(){
     if(menuActiveItem=="OCTAVE"){
       octave = encoder.getPosition()%6;
       menuActiveItem = "MAIN";
-    }else if(menuActiveItem=="OUTPUT"){
-      if(newPos%2 == 0){
-        menuActiveItem = "MAIN";
-        mode = "MIDI";
-      }
-      else if(newPos%2 == 1){
-        menuActiveItem = "MAIN";
-        mode = "SYNTH";
-      }
     }else if(menuActiveItem=="MAIN"){
       if(newPos%2 == 0){
         menuActiveItem = "OCTAVE";
       }
       else if(newPos%2 == 1){
-        menuActiveItem = "OUTPUT";
+        menuActiveItem = "SYNTH";
+      }
+    }else if(menuActiveItem=="SYNTH"){
+      if(newPos%2 == 0){
+        menuActiveItem = "WAVE";
+      }
+      else if(newPos%2 == 1){
+        menuActiveItem = "GAIN";
+      }
+    }
+    else if(menuActiveItem=="WAVE"){
+      if(newPos%4 == 0){
+        setTableSin();
+      }else if(newPos%4 == 1){
+        setTableTriangle();
+      }else if(newPos%4 == 2){
+        setTableSaw();
+      }else if(newPos%4 == 3){
+        menuActiveItem = "SYNTH";
       }
     }
     stateButtonEncoder = LOW;
@@ -396,26 +444,10 @@ void menuSelector(){
   stateButtonEncoder = state;
 
 }
-void updateControl()
-{
-  if (onOffSynth == 0)
-  {
-    stopMozzi();
-  }
-  else{
-    startMozzi();
-  }
-  // put changing controls in here
-}
-int updateAudio()
-{
-  return aSin.next(); // return an int signal centred around 0
-}
+
 
 void setup() {
-
-  startMozzi();
-
+  startMozzi(112);
   pinMode(pousserTirer, INPUT);
   digitalWrite(pousserTirer, HIGH);
 
@@ -458,19 +490,10 @@ void loop() {
     }
   }
   else{
-    int pousserTirerState = digitalRead(pousserTirer);
-    onOffSynth = 0;
-    for (int i = 0; i < 36; i++)
-    {
-      onOffSynth += noteSynth(pousserTirerState, i, octave);
-    }
-    
     // int sum =0;
     // for(int i=0; i<36; i++){
     //   sum += oldStatePousser[i]+oldStatePousser[i];
     // }
-    
-
 
   }
 
