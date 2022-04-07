@@ -209,24 +209,6 @@ void noteBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int veloc
           }
   }
 }
-// SYNTH CODE
-void setTableSin() {
-  oscil1.setTable(SIN2048_DATA);
-  oscil2.setTable(SIN2048_DATA);
-  displayswitch("sin");
-}
-void setTableTriangle() {
-  oscil1.setTable(TRIANGLE_VALVE_2_2048_DATA);
-  oscil2.setTable(TRIANGLE_VALVE_2_2048_DATA);
-  displayswitch("triangle");
-
-}
-void setTableSaw() {
-  oscil1.setTable(SAW2048_DATA);
-  oscil2.setTable(SAW2048_DATA);
-  displayswitch("triangle");
-
-}
 
 void noteOnSynth(int frequence){
   oscil1.setFreq(frequence);
@@ -363,51 +345,108 @@ void display(int newPos, String item){
     if(newPos%2 == 0){
       oled.println("> Wave");
       oled.println("  Gain");
+      oled.println("  Back");
     }
     else if(newPos%2 == 1){
       oled.println("  Wave");
       oled.println("> Gain");
-    }
-  }else if(menuActiveItem == "WAVE"){
-    if(newPos%4 == 0){
-      oled.println("> Sin");
-      oled.println("  Cos");
-      oled.println("  Saw");
       oled.println("  Back");
 
     }
-    else if(newPos%4 == 1){
-      oled.println("  Sin");
-      oled.println("> Cos");
-      oled.println("  Saw");
-      oled.println("  Back");
+    else if (newPos % 2 == 1)
+    {
+      oled.println("  Wave");
+      oled.println("  Gain");
+      oled.println(">  Back");
 
-    }
-    else if(newPos%4 == 2){
-      oled.println("  Sin");
-      oled.println("  Cos");
-      oled.println("> Saw");
-      oled.println("  Back");
-    }
-    else if(newPos%4 == 3){
-      oled.println("  Sin");
-      oled.println("  Cos");
-      oled.println("  Saw");
-      oled.println("> Back");
     }
   }
-}
+  else if (menuActiveItem == "WAVE")
+  {
+    if( newPos %4 == 0){
+      oled.println("> Osc1");
+      oled.println("  Osc2");
+      oled.println("  Both");
+      oled.println("  Back");
+    }
+    else if (newPos % 4 == 1)
+    {
+      oled.println("  Osc1");
+      oled.println("> Osc2");
+      oled.println("  Both");
+      oled.println("  Back");
+    }
+    else if (newPos % 4 == 2)
+    {
+      oled.println("  Osc1");
+      oled.println("  Osc2");
+      oled.println("> Both");
+      oled.println("  Back");
+    }
+    else if (newPos % 4 == 3)
+    {
+      oled.println("  Osc1");
+      oled.println("  Osc2");
+      oled.println("  Both");
+      oled.println("> Back");
+    }
+  }else if (menuActiveItem == "OSCILLATOR")
+    {
+      if (newPos % 4 == 0)
+      {
+        oled.println("> Sin");
+        oled.println("  Tri");
+        oled.println("  Saw");
+        oled.println("  Back");
+      }
+      else if (newPos % 4 == 1)
+      {
+        oled.println("  Sin");
+        oled.println("> Tri");
+        oled.println("  Saw");
+        oled.println("  Back");
+      }
+      else if (newPos % 4 == 2)
+      {
+        oled.println("  Sin");
+        oled.println("  Tri");
+        oled.println("> Saw");
+        oled.println("  Back");
+      }
+      else if (newPos % 4 == 3)
+      {
+        oled.println("  Sin");
+        oled.println("  Tri");
+        oled.println("  Saw");
+        oled.println("> Back");
+      }
+    }
+  }
 
+// SYNTH CODE
+void setTableSin(Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> osci)
+{
+  osci.setTable(SIN2048_DATA);
+}
+void setTableTriangle(Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> osci)
+{
+  osci.setTable(TRIANGLE_VALVE_2_2048_DATA);
+}
+void setTableSaw(Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> osci)
+{
+  osci.setTable(SAW2048_DATA);
+}
+int oscillator = 0;
 void menuSelector(){
   encoder.tick();
-
   int newPos = encoder.getPosition();
-
-  if (encoderPosition != newPos) {
+  if (encoderPosition != newPos)
+  {
     display(newPos, menuActiveItem);
     encoderPosition = newPos;
   }
   int state = digitalRead(buttonEncoder);
+
   if(state == LOW && state != stateButtonEncoder){
     if(menuActiveItem=="OCTAVE"){
       octave = encoder.getPosition()%6;
@@ -420,29 +459,86 @@ void menuSelector(){
         menuActiveItem = "SYNTH";
       }
     }else if(menuActiveItem=="SYNTH"){
-      if(newPos%2 == 0){
+      if(newPos%3 == 0){
         menuActiveItem = "WAVE";
       }
-      else if(newPos%2 == 1){
+      else if(newPos%3 == 1){
         menuActiveItem = "GAIN";
       }
-    }
-    else if(menuActiveItem=="WAVE"){
-      if(newPos%4 == 0){
-        setTableSin();
-      }else if(newPos%4 == 1){
-        setTableTriangle();
-      }else if(newPos%4 == 2){
-        setTableSaw();
-      }else if(newPos%4 == 3){
+      else if (newPos % 3 == 2)
+      {
+        menuActiveItem = "MAIN";
+      }
+    }else if (menuActiveItem == "WAVE")
+    {
+      if (newPos % 4 == 0)
+      {
+        menuActiveItem = "OSCILLATOR";
+        oscillator = 1;
+      }
+      else if (newPos % 4 == 1)
+      {
+        menuActiveItem = "OSCILLATOR";
+        oscillator = 2;
+      }
+      else if (newPos % 4 == 2)
+      {
+        menuActiveItem = "OSCILLATOR";
+        oscillator = 3;
+      }
+      else if (newPos % 4 == 3)
+      {
         menuActiveItem = "SYNTH";
+      }
+    }else if(menuActiveItem=="OSCILLATOR"){
+      oled.println(oscillator);
+
+      if(newPos%4 == 0){
+        if(oscillator == 1){
+          oscil1.setTable(SIN2048_DATA);
+         
+        }else if(oscillator == 2){
+          oscil2.setTable(SIN2048_DATA);
+
+        }
+        else if (oscillator == 3)
+        {
+          oscil1.setTable(SIN2048_DATA);
+          oscil2.setTable(SIN2048_DATA);
+        }
+      }else if(newPos%4 == 1){
+        if (oscillator == 1){
+          oscil1.setTable(TRIANGLE_VALVE_2_2048_DATA);
+        }
+        else if (oscillator == 2){
+          oscil2.setTable(TRIANGLE_VALVE_2_2048_DATA);
+        }
+        else if (oscillator == 3)
+        {
+          oscil1.setTable(TRIANGLE_VALVE_2_2048_DATA);
+          oscil2.setTable(TRIANGLE_VALVE_2_2048_DATA);
+        }
+      }else if(newPos%4 == 2){
+        if (oscillator == 1)        {
+          oscil1.setTable(SAW2048_DATA);
+        }
+        else if (oscillator == 2){
+          oscil2.setTable(SAW2048_DATA);
+        }
+        else if (oscillator == 3)
+        {
+          oscil1.setTable(SAW2048_DATA);
+          oscil2.setTable(SAW2048_DATA);
+        }
+      }else if(newPos%4 == 3){
+        menuActiveItem = "WAVE";
+        oscillator = 0;
       }
     }
     stateButtonEncoder = LOW;
     display(encoderPosition, menuActiveItem);
   }
   stateButtonEncoder = state;
-
 }
 
 
@@ -489,13 +585,4 @@ void loop() {
       }
     }
   }
-  else{
-    // int sum =0;
-    // for(int i=0; i<36; i++){
-    //   sum += oldStatePousser[i]+oldStatePousser[i];
-    // }
-
-  }
-
-
 }
