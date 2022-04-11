@@ -54,7 +54,7 @@ byte attackTheme = 255;
 byte attackBourdon = 125;
 
 int octaveBourdon1 = -2;
-int octaveBourdon2 = -2;
+int octaveBourdon2 = -3;
 
 int wichOsc = 0;
 
@@ -189,7 +189,9 @@ void noteMidiBourdon(uint8_t index, uint8_t octave, int velocity){
 
 int getOctaveValueToMultiplyForOsc(int osc, int frequence, int octaveValue){
   int freq = frequence;
-  if(osc == -2){
+  if(osc == -3){
+    freq = frequence/8;
+  }else if(osc == -2){
     freq = frequence/4;
   }else if(osc==-1){
     freq = frequence/2;
@@ -338,11 +340,12 @@ void updateControl(){
   bourdonSetup();
 
 
-  int pousserTirerState = digitalRead(pousserTirer);
+
   int onOffSynth = 0;
   int onOffBourdon = 0;
   for (int i = 0; i < 36; i++)
   {
+    int pousserTirerState = digitalRead(pousserTirer);
     if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
       onOffBourdon += noteSynthBourdon(pousserTirerState, i, octave);
     }else{
@@ -394,7 +397,7 @@ void display(int newPos, String item){
     oled.print(" ");
   }else if(menuActiveItem == "CHOOSE_OCTAVE"){
     oled.print("Oct : ");
-    oled.print(newPos%5 -2);
+    oled.print(newPos%6 -3);
     oled.print(" ");
   }else if(menuActiveItem == "MAIN"){
     if(newPos%3 == 0){
