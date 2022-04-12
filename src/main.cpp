@@ -8,11 +8,14 @@
 #include "concertina_lib/concertina.h"
 #include <MozziGuts.h>
 #include <Oscil.h>
+
 #include <tables/cos2048_int8.h>
 #include <tables/sin2048_int8.h> //Wavetables for Oscillators
 #include <tables/saw2048_int8.h>
+#include <tables/triangle2048_int8.h>
+#include <tables/square_no_alias_2048_int8.h>
 #include <tables/triangle_valve_2_2048_int8.h>
-#include <tables/sin1024_int8.h>
+
 #include <mozzi_rand.h>
 #include <ADSR.h>
 
@@ -49,12 +52,17 @@ int octave = 4;
 
 int octaveOsc1 = 0;
 int octaveOsc2 = -1;
-
-byte attackTheme = 255;
-byte attackBourdon = 125;
-
 int octaveBourdon1 = -2;
 int octaveBourdon2 = -3;
+
+byte activeOsc1 = 1;
+byte activeOsc2 = 1;
+byte activeBrd1 = 1;
+byte activeBrd2 = 1;
+
+byte attackTheme = 200;
+byte attackBourdon = 125;
+
 
 int wichOsc = 0;
 
@@ -64,17 +72,46 @@ int bourdonSynthActivated = 0;
 String menuActiveItem = "MAIN";
 String mode = "SYNTH";
 int oscillator = 0;
-
-
-void displayNote(int note){
-  oled.clear();
-  oled.print("Note :");
-  oled.println((int)note);
+void displayOsc(int i){
+  if(i == 1){
+    oled.print("Sin");
+  }else if(i == 2){
+    oled.print("Tri");
+  }else if(i == 3){
+    oled.print("Saw");
+  }else if(i == 4){
+    oled.print("Squ");
+  }
 }
+void displayState(){
+  oled.print("Oct: ");
+  oled.println(octave);
 
-void displayswitch(String s){
-  oled.clear();
-  oled.print("Note :");
+  oled.print("VOsc: ");
+  oled.print(attackTheme);
+  oled.print(" VBrd: ");
+  oled.println(attackBourdon);
+  oled.println("  -------------------");
+  oled.println("  Osc1 Osc2 Brd1 Brd2");
+
+  oled.print("Oct: ");
+  oled.print(octaveOsc1);
+  oled.print("   ");
+  oled.print(octaveOsc2);
+  oled.print("   ");
+  oled.print(octaveBourdon1);
+  oled.print("  ");
+  oled.print(octaveBourdon2);
+  oled.println("  ");
+
+  oled.print("Osc: ");
+  displayOsc(activeOsc1);
+  oled.print(" ");
+  displayOsc(activeOsc2);
+  oled.print(" ");
+  displayOsc(activeBrd1);
+  oled.print(" ");
+  displayOsc(activeBrd2);
 }
 
 void noteOn(int noteToPlay, int octave, int velocity){
@@ -82,7 +119,7 @@ void noteOn(int noteToPlay, int octave, int velocity){
 }
 
 void noteOff(int noteToShutdown, int octave){
-    MIDI.sendNoteOff(noteToShutdown + octave, 0, 1);
+  MIDI.sendNoteOff(noteToShutdown + octave, 0, 1);
 }
 
 void noteMidi(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity){
@@ -189,34 +226,36 @@ void noteMidiBourdon(uint8_t index, uint8_t octave, int velocity){
 
 int getOctaveValueToMultiplyForOsc(int osc, int frequence, int octaveValue){
   int freq = frequence;
-  if(osc == -3){
+  int finalOctave = osc+octaveValue;
+  if(finalOctave == -3){
     freq = frequence/8;
-  }else if(osc == -2){
+  }else if(finalOctave == -2){
     freq = frequence/4;
-  }else if(osc==-1){
+  }else if(finalOctave == -1){
     freq = frequence/2;
-  }else if(osc==1){
+  }else if(finalOctave == 0){
+    freq = frequence;
+  }else if(finalOctave ==1){
     freq = frequence*2;
-  }else if(osc==2){
+  }else if(finalOctave == 3){
     freq = frequence*4;
-  }
-  if(octaveValue == 1){
-    freq = freq*2;
-  }else if(octaveValue == 2){
-    freq = freq*4;
-  }else if(octaveValue == 3){
-    freq = freq*8;
-  }else if(octaveValue == 4){
-    freq = freq*16;
-  }else if(octaveValue == 5){
-    freq = freq*32;
+  }else if(finalOctave == 4){
+    freq = frequence*8;
+  }else if(finalOctave == 5){
+    freq = frequence*16;
+  }else if(finalOctave == 6){
+    freq = frequence*32;
+  }else if(finalOctave == 7){
+    freq = frequence*64;
   }
   return freq;
 }
 
 void noteOnSynth(int frequence, int octave){
+
   oscil1.setFreq(getOctaveValueToMultiplyForOsc(octaveOsc1, frequence, octave));
   oscil2.setFreq(getOctaveValueToMultiplyForOsc(octaveOsc2, frequence, octave));
+  envelope.noteOff();
   envelope.noteOn(); // on joue la note
 }
 
@@ -242,7 +281,6 @@ int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave){
         if (oldStatePousser[index] == BUTTON_RELEASED)
         {
           // play note
-
           noteOnSynth(noteSynthA, octave);
           oldStatePousser[index] = BUTTON_PRESSED;
           if (oldStateTirer[index] == BUTTON_PRESSED)
@@ -334,18 +372,18 @@ void updateControl(){
   int decay = 0;
   int release_ms = 0; // times for the attack, decay, and release of envelope
   int sustain  = 0; //sustain time set to zero so notes can be played as long as key is presssed without being effect by previus touch
+  byte pousserTirerState = 0;
   envelope.setReleaseLevel(0);
   envelope.setADLevels(attack_level,decay_level);
   envelope.setTimes(attack,decay,sustain,release_ms);
   bourdonSetup();
 
 
-
   int onOffSynth = 0;
   int onOffBourdon = 0;
+  pousserTirerState = digitalRead(pousserTirer);
   for (int i = 0; i < 36; i++)
   {
-    int pousserTirerState = digitalRead(pousserTirer);
     if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
       onOffBourdon += noteSynthBourdon(pousserTirerState, i, octave);
     }else{
@@ -385,7 +423,7 @@ void display(int newPos, String item){
   oled.println("V 0.9.5");
   if(menuActiveItem=="OCTAVE"){
     oled.print("Oct : ");
-    oled.print(newPos%6);
+    oled.print(octave+newPos%6);
     oled.print(" ");
   }else if(menuActiveItem == "ATTACK_MAIN"){
     oled.print("Attack : ");
@@ -400,20 +438,31 @@ void display(int newPos, String item){
     oled.print(newPos%6 -3);
     oled.print(" ");
   }else if(menuActiveItem == "MAIN"){
-    if(newPos%3 == 0){
+    if(newPos%4 == 0){
       oled.println("> Octave");
       oled.println("  Synth");
       oled.println("  Mode");
+      oled.println("  State");
     }
-    else if(newPos%3 == 1){
+    else if(newPos%4 == 1){
       oled.println("  Octave");
       oled.println("> Synth");
       oled.println("  Mode");
+      oled.println("  State");
+
     }
-    else if(newPos%3 == 2){
+    else if(newPos%4 == 2){
       oled.println("  Octave");
       oled.println("  Synth");
       oled.println("> Mode");
+      oled.println("  State");
+
+    }
+    else if(newPos%4 == 3){
+      oled.println("  Octave");
+      oled.println("  Synth");
+      oled.println("  Mode");
+      oled.println("> State");
     }
   }else if(menuActiveItem == "MODE"){
     if(newPos%2 == 0){
@@ -451,6 +500,8 @@ void display(int newPos, String item){
       oled.println("  Osc Oct");
       oled.println("> Back");
     }
+  }else if(menuActiveItem == "DISPLAY_STATE"){
+    displayState();
   }
   else if (menuActiveItem == "ATTACK"){
     if(newPos%3==0){
@@ -469,71 +520,96 @@ void display(int newPos, String item){
   }
   else if (menuActiveItem == "OCT_OSC" || menuActiveItem == "WAVE")
   {
-    if( newPos % 5 == 0){
+    if( newPos % 6 == 0){
       oled.println("> Osc1 ");
       oled.println("  Osc2 ");
       oled.println("  Drone1");
       oled.println("  Drone2 ");
+      oled.println("  All ");
       oled.println("  Back ");
     }
-    else if (newPos % 5 == 1){
+    else if (newPos % 6 == 1){
       oled.println("  Osc1");
       oled.println("> Osc2");
       oled.println("  Drone1");
       oled.println("  Drone2");
+      oled.println("  All ");
       oled.println("  Back ");
     }
-    else if (newPos % 5 == 2){
+    else if (newPos % 6 == 2){
       oled.println("  Osc1");
       oled.println("  Osc2");
       oled.println("> Drone1");
       oled.println("  Drone2");
+      oled.println("  All ");
       oled.println("  Back ");
     }
-    else if (newPos % 5 == 3)
+    else if (newPos % 6 == 3)
     {
       oled.println("  Osc1");
       oled.println("  Osc2");
       oled.println("  Drone1");
       oled.println("> Drone2");
+      oled.println("  All ");
       oled.println("  Back ");
     }
-    else if (newPos % 5 == 4)
+    else if (newPos % 6 == 4)
     {
       oled.println("  Osc1");
       oled.println("  Osc2");
       oled.println("  Drone1");
       oled.println("  Drone2");
+      oled.println("> All ");
+      oled.println("  Back ");
+    }
+    else if (newPos % 6 == 5)
+    {
+      oled.println("  Osc1");
+      oled.println("  Osc2");
+      oled.println("  Drone1");
+      oled.println("  Drone2");
+      oled.println("  All ");
       oled.println("> Back ");
     }
   }else if (menuActiveItem == "OSCILLATOR")
     {
-      if (newPos % 4 == 0)
+      if (newPos % 5 == 0)
       {
         oled.println("> Sin");
         oled.println("  Tri");
         oled.println("  Saw");
+        oled.println("  Square");
         oled.println("  Back");
       }
-      else if (newPos % 4 == 1)
+      else if (newPos % 5 == 1)
       {
         oled.println("  Sin");
         oled.println("> Tri");
         oled.println("  Saw");
+        oled.println("  Square");
         oled.println("  Back");
       }
-      else if (newPos % 4 == 2)
+      else if (newPos % 5 == 2)
       {
         oled.println("  Sin");
         oled.println("  Tri");
         oled.println("> Saw");
+        oled.println("  Square");
         oled.println("  Back");
       }
-      else if (newPos % 4 == 3)
+      else if (newPos % 5 == 3)
       {
         oled.println("  Sin");
         oled.println("  Tri");
         oled.println("  Saw");
+        oled.println("> Square");
+        oled.println("  Back");
+      }else if (newPos % 5 == 4)
+      {
+        oled.println("  Sin");
+        oled.println("  Tri");
+        oled.println("  Saw");
+        oled.println("  Square");
         oled.println("> Back");
       }
     }
@@ -552,7 +628,7 @@ void menuSelector(){
 
   if(state == LOW && state != stateButtonEncoder){
     if(menuActiveItem=="OCTAVE"){
-      octave = newPos%6;
+      octave = octave+newPos%6;
       menuActiveItem = "MAIN";
     }else if(menuActiveItem=="ATTACK_MAIN"){
       attackTheme = (attackTheme+5*newPos)%255;
@@ -563,15 +639,20 @@ void menuSelector(){
       attackBourdon = (attackBourdon+5*newPos)%255;
       encoder.setPosition(0);
       menuActiveItem = "ATTACK";
+    }else if(menuActiveItem=="DISPLAY_STATE"){
+      menuActiveItem = "MAIN";
     }
     else if(menuActiveItem=="MAIN"){
-      if(newPos%3 == 0){
+      if(newPos%4 == 0){
         menuActiveItem = "OCTAVE";
       }
-      else if(newPos%3 == 1){
+      else if(newPos%4 == 1){
         menuActiveItem = "SYNTH";
-      }else if(newPos%3 == 2){
-          menuActiveItem = "MODE";
+      }else if(newPos%4 == 2){
+        menuActiveItem = "MODE";
+      }
+      else if(newPos%4 == 3){
+        menuActiveItem = "DISPLAY_STATE";
       }
     }else if(menuActiveItem=="MODE"){
       if(newPos%2 == 0){
@@ -639,89 +720,130 @@ void menuSelector(){
 
     }else if (menuActiveItem == "WAVE")
     {
-      if (newPos % 5 == 0)
+      if (newPos % 6 == 0)
       {
         menuActiveItem = "OSCILLATOR";
         oscillator = 1;
       }
-      else if (newPos % 5 == 1)
+      else if (newPos % 6 == 1)
       {
         menuActiveItem = "OSCILLATOR";
         oscillator = 2;
       }
-      else if (newPos % 5 == 2)
+      else if (newPos % 6 == 2)
       {
         menuActiveItem = "OSCILLATOR";
         oscillator = 3;
       }
-      else if (newPos % 5 == 3)
+      else if (newPos % 6 == 3)
       {
         menuActiveItem = "OSCILLATOR";
         oscillator = 4;
       }
-      else if (newPos % 5 == 4)
+      else if (newPos % 6 == 4)
+      {
+        menuActiveItem = "OSCILLATOR";
+        oscillator = 5;
+      }
+      else if (newPos % 6 == 5)
       {
         menuActiveItem = "SYNTH";
       }
     }else if(menuActiveItem=="OSCILLATOR"){
-      if(newPos%4 == 0){
+      if(newPos%5 == 0){
         if(oscillator == 1){
           oscil1.setTable(SIN2048_DATA);
+          activeOsc1 = 1;
 
         }else if(oscillator == 2){
           oscil2.setTable(SIN2048_DATA);
-        }
-        else if(oscillator == 3){
+          activeOsc2 = 1;
+
+        }else if(oscillator == 3){
           bourdon1.setTable(SIN2048_DATA);
+          activeBrd1 = 1;
+
+        }else if (oscillator == 4){
           bourdon2.setTable(SIN2048_DATA);
-        }
-        else if (oscillator == 4)
-        {
+          activeBrd2 = 1;
+
+        }else if (oscillator == 5){
+          activeOsc1 = 1;activeOsc2 = 1;activeBrd1 = 1;activeBrd2 = 1;
           oscil1.setTable(SIN2048_DATA);
           oscil2.setTable(SIN2048_DATA);
           bourdon1.setTable(SIN2048_DATA);
           bourdon2.setTable(SIN2048_DATA);
         }
-      }else if(newPos%4 == 1){
+      }else if(newPos%5 == 1){
         if (oscillator == 1){
-          oscil1.setTable(TRIANGLE_VALVE_2_2048_DATA);
+          oscil1.setTable(TRIANGLE2048_DATA);
+          activeOsc1 = 2;
+        }else if (oscillator == 2){
+          oscil2.setTable(TRIANGLE2048_DATA);
+          activeOsc2 = 2;
+        }else if(oscillator == 3){
+          bourdon1.setTable(TRIANGLE2048_DATA);
+          activeBrd1 = 2;
+        }else if (oscillator == 4){
+          bourdon2.setTable(TRIANGLE2048_DATA);
+          activeBrd2 = 2;
+        }else if (oscillator == 5){
+          activeOsc1 = 2;activeOsc2 = 2;activeBrd1 = 2;activeBrd2 = 2;
+
+          oscil1.setTable(TRIANGLE2048_DATA);
+          oscil2.setTable(TRIANGLE2048_DATA);
+          bourdon1.setTable(TRIANGLE2048_DATA);
+          bourdon2.setTable(TRIANGLE2048_DATA);
         }
-        else if (oscillator == 2){
-          oscil2.setTable(TRIANGLE_VALVE_2_2048_DATA);
+      }else if(newPos%5 == 2){
+        if (oscillator == 1){
+          oscil1.setTable(SAW2048_DATA);
+          activeOsc1 = 3;
+        }else if (oscillator == 2){
+          activeOsc2 = 3;
+          oscil2.setTable(SAW2048_DATA);
+        }else if(oscillator == 3){
+          activeBrd1 = 3;
+          bourdon1.setTable(SAW2048_DATA);
+        }else if (oscillator == 4){
+          activeBrd2 = 3;
+          bourdon2.setTable(SAW2048_DATA);
+        }else if (oscillator == 5){
+          activeOsc1 = 3;activeOsc2 = 3;activeBrd1 = 3;activeBrd2 = 3;
+
+          oscil1.setTable(SAW2048_DATA);
+          oscil2.setTable(SAW2048_DATA);
+          bourdon1.setTable(SAW2048_DATA);
+          bourdon2.setTable(SAW2048_DATA);
         }
-        else if(oscillator == 3){
-          bourdon1.setTable(TRIANGLE_VALVE_2_2048_DATA);
-          bourdon2.setTable(TRIANGLE_VALVE_2_2048_DATA);
-        }
-        else if (oscillator == 4)
-        {
-          oscil1.setTable(TRIANGLE_VALVE_2_2048_DATA);
-          oscil2.setTable(TRIANGLE_VALVE_2_2048_DATA);
-          bourdon1.setTable(TRIANGLE_VALVE_2_2048_DATA);
-          bourdon2.setTable(TRIANGLE_VALVE_2_2048_DATA);
-        }
-      }else if(newPos%4 == 2){
+      }else if(newPos%5 == 3){
         if (oscillator == 1)        {
-          oscil1.setTable(SAW2048_DATA);
+          oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
+          activeOsc1=4;
+        }else if (oscillator == 2){
+          oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
+          activeOsc2=4;
+
+        }else if(oscillator == 3){
+          bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
+          activeBrd1=4;
+
+        }else if (oscillator == 4){
+          bourdon2.setTable(SQUARE_NO_ALIAS_2048_DATA);
+          activeBrd2=4;
+
+        }else if (oscillator == 5){
+          activeOsc1=4;activeOsc2=4;activeBrd1=4;activeBrd2=4;
+          oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
+          oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
+          bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
+          bourdon2.setTable(SQUARE_NO_ALIAS_2048_DATA);
         }
-        else if (oscillator == 2){
-          oscil2.setTable(SAW2048_DATA);
-        }
-        else if(oscillator == 3){
-          bourdon1.setTable(SAW2048_DATA);
-          bourdon2.setTable(SAW2048_DATA);
-        }
-        else if (oscillator == 4)
-        {
-          oscil1.setTable(SAW2048_DATA);
-          oscil2.setTable(SAW2048_DATA);
-          bourdon1.setTable(SAW2048_DATA);
-          bourdon2.setTable(SAW2048_DATA);
-        }
-      }else if(newPos%4 == 3){
+      }else if(newPos%5 == 4){
         menuActiveItem = "WAVE";
         oscillator = 0;
       }
+      encoder.setPosition(0);
     }
     stateButtonEncoder = LOW;
     display(encoderPosition, menuActiveItem);
@@ -757,7 +879,7 @@ void setup() {
 
 void loop() {
   indexMenu++;
-  if(indexMenu==30){
+  if(indexMenu==50){
     menuSelector();
     indexMenu = 0;
   }
