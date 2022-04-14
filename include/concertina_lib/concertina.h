@@ -4,6 +4,20 @@
 #include <MIDI.h>
 #include <Tone.h>
 
+#define OCTAVE 1
+#define MODE 2
+#define DISPLAY_STATE 3
+#define MENU_ATTACK 4
+#define ATTACK_MAIN 5
+#define ATTACK_DRONE 6
+#define OCT_OSC 7
+#define MAIN 8
+#define CHOOSE_OCTAVE 9
+#define OSCILLATOR 10
+#define SYNTH 11
+#define WAVE 12
+
+
 enum
 {
     // DEFINING MIDI notes
@@ -109,19 +123,19 @@ int pinButton[] = {
 int pousser[] = {
   Gn2, An2, Cs3, Cn3, Gs2, Bn2,
   En2, Gn2, Cn2, Cs2, Gn1, Dn2,
-  Bn1, An1, En1, Cn1, Dn1, Dn3,
-  Dn1, Dn1, Fn4, An1, Bn4, En4,
+  Bn1, An1, En1, Cn1, Cn1, Dn3,
+  Bn1, Dn1, Fn4, An1, Bn4, En4,
   Gn4, Cn4, Cs4, Dn4, Gn3, Fs3,
-  Bn3, En3, An3, Gn3, An1, Dn1,
+  Bn3, En3, An3, Gn3, En1, Gn1,
 };
 
 int tirer[] = {
-  An2, Gn2, Ds3, Bn2, Bb2, Cn3,
+  An2, Gn2, Ds3, Bn2, As2, Cn3,
   Fn2, An2, Dn2, Fs2, Bn1, Fs2,
-  Dn2, Bb1, Fn1, Gn1, Dn1, En3,
-  Dn1, Dn1, An4, An1, Fs4, Bn3,
-  En4, An3, Ds4, Cn4, Fn3, Bb3,
-  An3, Dn3, Gn3, Fs3, An1, Dn1
+  Dn2, As1, Fn1, Gn1, Gn3, En3,
+  Cn3, En3, An4, Bn3, Fs4, Bn3,
+  En4, An3, Ds4, Cn4, Fn3, As3,
+  An3, Dn3, Gn3, Fs3, Dn3, An2
 };
 
 int pousserSynth[] = {
