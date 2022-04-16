@@ -24,8 +24,6 @@
 #define OPTIMIZE_I2C 1
 // Define proper RST_PIN if required.
 #define RST_PIN -1
-#define BUTTON_PRESSED 1
-#define BUTTON_RELEASED 0
 
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope; // notre enveloppe
 ADSR <CONTROL_RATE, AUDIO_RATE> envelopeBourdon; // notre enveloppe
@@ -69,7 +67,10 @@ int globalFrequence;
 int stateWave = 1;
 int bourdonSynthActivated = 0;
 int menuActiveItem = MAIN;
-String mode = "SYNTH";
+
+byte mode = MODE_MIDI;
+byte mode_midi = DRUM;
+
 int oscillator = 0;
 
 static void displayOsc(int i){
@@ -85,7 +86,7 @@ static void displayOsc(int i){
 }
 static void displayMainTitle(){
   oled.println("Melodica MIDI");
-  oled.println("V 0.9.5");
+  oled.println("V 0.9.9.5");
 }
 static void displayAttack(){
   oled.print("VOsc: ");
@@ -131,6 +132,23 @@ static void noteOn(int noteToPlay, int octave, int velocity){
 static void noteOff(int noteToShutdown, int octave){
   MIDI.sendNoteOff(noteToShutdown + 12*octave, 0, 1);
 }
+static void noteMidiDrum(uint8_t index, int velocity){
+
+  digitalWrite(pinButton[index], HIGH);
+  uint8_t bouton = digitalRead(pinButton[index]);
+  uint8_t note = drum[index];
+  if (bouton == LOW)
+  {
+    if(oldStatePousser[index] == BUTTON_RELEASED){
+      MIDI.sendNoteOn(note, velocity, 1);
+    }
+    oldStatePousser[index] = BUTTON_PRESSED;
+  }else{
+    oldStatePousser[index] = BUTTON_RELEASED;
+  }
+
+}
+
 static void noteMidi(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity){
    //, uint8_t oldStatePousser, uint8_t oldStateTirer
   // velocity = 127;
@@ -159,7 +177,6 @@ static void noteMidi(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int v
           // on pousse sur le bouton et sur le soufflet
           if (oldStatePousser[index] == BUTTON_RELEASED)
           {
-
             noteOn(noteA, octave, velocity);
             oldStatePousser[index] = BUTTON_PRESSED;
             if (oldStateTirer[index] == BUTTON_PRESSED)
@@ -278,7 +295,6 @@ static int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave){
         if (oldStatePousser[index] == BUTTON_RELEASED)
         {
           // play note
-
           oldStatePousser[index] = BUTTON_PRESSED;
           if (oldStateTirer[index] == BUTTON_PRESSED)
           {
@@ -418,41 +434,66 @@ static void display(byte newPos, int menuActiveItem){
   oled.clear();
 
   if(menuActiveItem==OCTAVE){
+    oled.print("Octave : ");
+    oled.println(octave);
+
     oled.print("Oct : ");
     oled.print((octave+newPos)%6);
     oled.print(" ");
   }else if(menuActiveItem == ATTACK_MAIN){
-    oled.print("Attack : ");
+    oled.print("Volume Main : ");
+    oled.println(attackTheme);
+    oled.println(" ");
+
+    oled.print("Volume : ");
     oled.print((attackTheme+5*newPos)%255);
     oled.print(" ");
   }else if(menuActiveItem == ATTACK_DRONE){
-    oled.print("Attack : ");
+    oled.print("Volume Main : ");
+    oled.println(attackBourdon);
+    oled.println(" ");
+    oled.print("Volume : ");
     oled.print((attackBourdon+5*newPos)%255);
     oled.print(" ");
   }else if(menuActiveItem == CHOOSE_OCTAVE){
-    oled.print("Oct : ");
+    printOscOct();
+    oled.println("");
     oled.print(newPos%6 -3);
     oled.print(" ");
   }else if(menuActiveItem == MAIN){
     displayMainTitle();
+    oled.print("  Mode : ");
+    if(mode == MODE_MIDI){
+      oled.println("MIDI");
+
+    }else if(mode == MODE_SYNTH){
+      oled.println("Synth");
+    }
     oled.println("  Octave");
-    oled.println("  Synth");
-    oled.println("  Mode");
+    oled.println("  Synth setup");
+    oled.println("  MIDI setup");
     oled.println("  State");
-    oled.setCursor(0, (newPos%4)+2);
+    oled.setCursor(0, (newPos%5)+2);
     oled.print(">");
-  }else if(menuActiveItem == MODE){
-    oled.println("Mode :");
-    oled.println("");
-    oled.println("  Midi");
-    oled.println("  Synth");
+  }
+  else if(menuActiveItem == MIDI_SETTINGS){
+    oled.println("MIDI settings");
+    oled.println(" ");
+    oled.print("  Mode : ");
+    if(mode_midi == DRUM){
+      oled.println("DRUM !!!");
+    }else if(mode_midi == THEME){
+      oled.println("Theme");
+    }
+    oled.println("  Back");
     oled.setCursor(0, (newPos%2)+2);
     oled.print(">");
-  }else if(menuActiveItem == SYNTH){
+  }
+  else if(menuActiveItem == SYNTH_SETTINGS){
     oled.println("Synth");
     oled.println("");
-    oled.println("  Wave");
-    oled.println("  Attack");
+    oled.println("  Waveform");
+    oled.println("  Volume");
     oled.println("  Osc Oct");
     oled.println("  Back");
     oled.setCursor(0, (newPos%4)+2);
@@ -461,7 +502,7 @@ static void display(byte newPos, int menuActiveItem){
     displayState();
   }
   else if (menuActiveItem == MENU_ATTACK){
-    oled.println("Attack :");
+    oled.println("Volume :");
     displayAttack();
     oled.println("  Theme");
     oled.println("  Drone");
@@ -491,7 +532,7 @@ static void display(byte newPos, int menuActiveItem){
   }else if (menuActiveItem == OSCILLATOR)
   {
     oled.println("Wave Form :");
-    oled.println("");
+    printOscWave();
     oled.println("  Sin");
     oled.println("  Tri");
     oled.println("  Saw");
@@ -517,27 +558,38 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     menuActiveItem = MENU_ATTACK;
   }else if(menuActiveItem==DISPLAY_STATE){
     menuActiveItem = MAIN;
-  }
-  else if(menuActiveItem==MAIN){
-    if(newPos%4 == 0){
+  }else if(menuActiveItem == MIDI_SETTINGS){
+    if(newPos%2 == 0){
+      if(mode_midi == DRUM){
+        mode_midi=THEME;
+      }
+      else if(mode_midi == THEME){
+        mode_midi=DRUM;
+      }
+    }else if(newPos%2==1){
+      menuActiveItem = MAIN;
+    }
+
+  }else if(menuActiveItem==MAIN){
+    if(newPos%5 == 0){
+      if(mode == MODE_SYNTH){
+        mode=MODE_MIDI;
+      }
+      else if(mode == MODE_MIDI){
+        mode=MODE_SYNTH;
+      }
+    }
+    else if(newPos%5 == 1){
       menuActiveItem = OCTAVE;
     }
-    else if(newPos%4 == 1){
-      menuActiveItem = SYNTH;
-    }else if(newPos%4 == 2){
-      menuActiveItem = MODE;
+    else if(newPos%5 == 2){
+      menuActiveItem = SYNTH_SETTINGS;
     }
-    else if(newPos%4 == 3){
+    else if(newPos%5 == 3){
+      menuActiveItem = MIDI_SETTINGS;
+    }
+    else if(newPos%5 == 4){
       menuActiveItem = DISPLAY_STATE;
-    }
-  }else if(menuActiveItem==MODE){
-    if(newPos%2 == 0){
-      mode="MIDI";
-      menuActiveItem = MAIN;
-    }
-    else if(newPos%2 == 1){
-      mode=SYNTH;
-      menuActiveItem = MAIN;
     }
   }else if(menuActiveItem==MENU_ATTACK){
     if(newPos%3 == 0){
@@ -547,9 +599,9 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
       menuActiveItem = ATTACK_DRONE;
     }
     else if(newPos%3 == 2){
-      menuActiveItem = SYNTH;
+      menuActiveItem = SYNTH_SETTINGS;
     }
-  }else if(menuActiveItem==SYNTH){
+  }else if(menuActiveItem==SYNTH_SETTINGS){
     if(newPos%4 == 0){
       menuActiveItem = WAVE;
     }
@@ -571,7 +623,7 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
 
   }else if(menuActiveItem==OCT_OSC){
     if(newPos%6 == 5){
-      menuActiveItem = SYNTH;
+      menuActiveItem = SYNTH_SETTINGS;
     }else{
       menuActiveItem = CHOOSE_OCTAVE;
       wichOsc = (newPos%6)+1;
@@ -580,7 +632,7 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
   }else if (menuActiveItem == WAVE){
     if (newPos % 6 == 5)
     {
-      menuActiveItem = SYNTH;
+      menuActiveItem = SYNTH_SETTINGS;
     }else{
       menuActiveItem = OSCILLATOR;
       oscillator = (newPos % 6)+1;
@@ -724,21 +776,28 @@ void setup() {
 }
 void loop() {
 
+  byte pousserTirerState;
   indexMenu++;
   if(indexMenu==30){
     menuSelector();
     indexMenu = 0;
   }
   audioHook();
-  if(mode == "MIDI"){
-    byte pousserTirerState = digitalRead(pousserTirer);
-    for (byte i = 0; i < 36; i++)
-    {
-      if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
-        noteMidiBourdon(i, octave, 127);
-      }else{
-        noteMidi(pousserTirerState, i, octave, 127);
+  if(mode == MODE_MIDI){
+    if(mode_midi == DRUM){
+      for (byte i = 0; i < 36; i++){
+        noteMidiDrum(i, 127);
+      }
+    }else{
+      for (byte i = 0; i < 36; i++){
+        pousserTirerState = digitalRead(pousserTirer);
+        if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
+          noteMidiBourdon(i, octave, 127);
+        }else{
+          noteMidi(pousserTirerState, i, octave, 127);
+        }
       }
     }
+
   }
 }

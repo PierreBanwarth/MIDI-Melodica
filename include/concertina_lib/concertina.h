@@ -14,9 +14,19 @@
 #define MAIN 8
 #define CHOOSE_OCTAVE 9
 #define OSCILLATOR 10
-#define SYNTH 11
-#define WAVE 12
+#define WAVE 11
 
+#define BUTTON_RELEASED 0
+#define BUTTON_PRESSED 1
+
+#define SYNTH_SETTINGS 12
+#define MIDI_SETTINGS 13
+
+#define DRUM 14
+#define THEME 15
+
+#define MODE_MIDI 0
+#define MODE_SYNTH 1
 
 enum
 {
@@ -120,6 +130,15 @@ int pinButton[] = {
   48,49,50,51,52,53
 };
 
+int drum[] = {
+  Cs2, An1, 8, 9, Cn2,Bn1,
+  As1,Gs1,Gn1,Fs1,En1,Fn1,
+  Dn1,Ds1,Cn1,Cs1,34,Dn2,
+  36,37,38,39,40,41,
+  42,43,44,45,46,47,
+  48,49,50,51,52,53
+};
+
 int pousser[] = {
   Gn2, An2, Cs3, Cn3, Gs2, Bn2,
   En2, Gn2, Cn2, Cs2, Gn1, Dn2,
@@ -139,7 +158,7 @@ int tirer[] = {
 };
 
 int pousserSynth[] = {
-  NOTE_G2, NOTE_A2, NOTE_CS3, NOTE_C3,  NOTE_GS2, NOTE_B2,
+  NOTE_A2, NOTE_G2, NOTE_CS3, NOTE_C3,  NOTE_GS2, NOTE_B2,
   NOTE_E2, NOTE_G2, NOTE_C2,  NOTE_CS2, NOTE_G1,  NOTE_D2,
   NOTE_B1, NOTE_A1, NOTE_E1,  NOTE_C1,  NOTE_C1,  NOTE_D3,
   NOTE_B1, NOTE_D1, NOTE_F4,  NOTE_A1,  NOTE_B4,  NOTE_E4,
@@ -148,7 +167,7 @@ int pousserSynth[] = {
 };
 
 int tirerSynth[] = {
-  NOTE_A2, NOTE_G2, NOTE_DS3, NOTE_B2, NOTE_AS2, NOTE_C3,
+  NOTE_G2, NOTE_A2, NOTE_DS3, NOTE_B2, NOTE_AS2, NOTE_C3,
   NOTE_F2, NOTE_A2, NOTE_D2, NOTE_FS2, NOTE_B1, NOTE_FS2,
   NOTE_D2, NOTE_AS1, NOTE_F1, NOTE_G1, NOTE_G3, NOTE_E3,
   NOTE_C3, NOTE_E3, NOTE_A4, NOTE_B3, NOTE_FS4, NOTE_B3,
