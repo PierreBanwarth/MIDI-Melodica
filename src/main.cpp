@@ -159,64 +159,54 @@ static void noteMidi(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int v
   uint8_t noteB = tirer[index];
   if (pousser[index] != 0 || tirer[index] != 0)
   {
-    if (oldStatePousser[index] > 1)
-    { // Tune started too recently to be changed
-      oldStatePousser[index]--;
-    }
-    else if (oldStateTirer[index] > 1)
-    { // Tune started too recently to be changed
-      oldStateTirer[index]--;
-    }
-    else
+    // higher velocity usually makes MIDI instruments louder
+    if (bouton == LOW)
     {
-      // higher velocity usually makes MIDI instruments louder
-      if (bouton == LOW)
+      if (sens_soufflet == LOW)
       {
-        if (sens_soufflet == LOW)
+        // on pousse sur le bouton et sur le soufflet
+        if (oldStatePousser[index] == BUTTON_RELEASED)
         {
-          // on pousse sur le bouton et sur le soufflet
-          if (oldStatePousser[index] == BUTTON_RELEASED)
+          noteOn(noteA, octave, velocity);
+          oldStatePousser[index] = BUTTON_PRESSED;
+          if (oldStateTirer[index] == BUTTON_PRESSED)
           {
-            noteOn(noteA, octave, velocity);
-            oldStatePousser[index] = BUTTON_PRESSED;
-            if (oldStateTirer[index] == BUTTON_PRESSED)
-            {
-              noteOff(noteB, octave);
-              oldStateTirer[index] = BUTTON_RELEASED;
-            }
-          }
-        }
-        else
-        { // on tire sur le soufflet et on appuie sur le bouton
-          if (oldStateTirer[index] == 0)
-          {
-
-            noteOn(noteB, octave, velocity);
-            oldStateTirer[index] = BUTTON_PRESSED;
-            if (oldStatePousser[index] == BUTTON_PRESSED)
-            {
-              noteOff(noteA, octave);
-              oldStatePousser[index] = BUTTON_RELEASED;
-            }
+            noteOff(noteB, octave);
+            oldStateTirer[index] = BUTTON_RELEASED;
           }
         }
       }
       else
-      {
-        if (oldStatePousser[index] == BUTTON_PRESSED)
+      { // on tire sur le soufflet et on appuie sur le bouton
+        if (oldStateTirer[index] == 0)
         {
-          noteOff(noteA, octave);
-          oldStatePousser[index] = BUTTON_RELEASED;
-        }
-        if (oldStateTirer[index] == BUTTON_PRESSED)
-        {
-          // on appuie pas sur le bouton ma
-          noteOff(noteB, octave);
-          oldStateTirer[index] = BUTTON_RELEASED;
+
+          noteOn(noteB, octave, velocity);
+          oldStateTirer[index] = BUTTON_PRESSED;
+          if (oldStatePousser[index] == BUTTON_PRESSED)
+          {
+            noteOff(noteA, octave);
+            oldStatePousser[index] = BUTTON_RELEASED;
+          }
         }
       }
     }
+    else
+    {
+      if (oldStatePousser[index] == BUTTON_PRESSED)
+      {
+        noteOff(noteA, octave);
+        oldStatePousser[index] = BUTTON_RELEASED;
+      }
+      if (oldStateTirer[index] == BUTTON_PRESSED)
+      {
+        // on appuie pas sur le bouton ma
+        noteOff(noteB, octave);
+        oldStateTirer[index] = BUTTON_RELEASED;
+      }
+    }
   }
+
 }
 static void noteMidiBourdon(uint8_t index, uint8_t octave, int velocity){
   //, uint8_t oldStatePousser, uint8_t oldStateTirer
@@ -227,6 +217,7 @@ static void noteMidiBourdon(uint8_t index, uint8_t octave, int velocity){
   uint8_t note = pousser[index];
   if (bouton == LOW)
   {
+
     // on pousse sur le bouton et sur le soufflet
     if(oldStatePousser[index] == BUTTON_RELEASED){
       oldStatePousser[index] = BUTTON_PRESSED;
