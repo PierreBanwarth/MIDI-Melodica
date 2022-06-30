@@ -171,7 +171,7 @@ static void displayState(){
   oled.print("Oct: ");
   oled.print(octave);
   oled.print(" ");
-  displayShift(shiftHalfTone);
+                                                                                                                                        displayShift(shiftHalfTone);
   oled.println("");
 
   displayAttack();
@@ -509,6 +509,18 @@ static void display(byte newPos, int menuActiveItem){
     oled.print("Volume : ");
     oled.print((attackBourdon+5*newPos)%255);
     oled.print(" ");
+  }else if(menuActiveItem == PRESETS){
+    oled.println("  Preset 1");
+    oled.println("  Preset 2");
+    oled.println("  Preset 3");
+    oled.println("  Preset 4");
+    oled.println("  Preset 5");
+    oled.println("  Preset 6");
+    oled.println("  Preset 7");
+    oled.println("  Back");
+    oled.setCursor(0, (newPos%8));
+    oled.print(">");
+
   }else if(menuActiveItem == CHOOSE_OCTAVE){
     printOscOct();
     oled.println("");
@@ -525,9 +537,15 @@ static void display(byte newPos, int menuActiveItem){
     }
     oled.println("  Octave");
     oled.println("  HalfTone");
-    oled.println("  Synth setup");
-    oled.println("  MIDI setup");
+    if(mode == MODE_MIDI){
+      oled.println("  MIDI setup");
+
+    }else if(mode == MODE_SYNTH){
+      oled.println("  SYNTH setup");
+    }
+
     oled.println("  State");
+    oled.println("  Presets");
     oled.setCursor(0, (newPos%6)+2);
     oled.print(">");
   }
@@ -597,6 +615,42 @@ static void display(byte newPos, int menuActiveItem){
     oled.print(">");
   }
 }
+static const int8_t* getWaveFromInt(int i){
+  if(i==1){
+    return(SIN2048_DATA);
+  }else if(i==2){
+    return(TRIANGLE2048_DATA);
+  }else if(i==3){
+    return(SAW2048_DATA);
+  }else{
+    return(SQUARE_NO_ALIAS_2048_DATA);
+  }
+
+}
+
+static void setPresets(int i){
+  oled.print(i);
+  octave = presets[i][0];
+  shiftHalfTone = presets[i][1];
+  oscil1.setTable(getWaveFromInt(presets[i][2]));
+  activeOsc1 = presets[i][2];
+
+  octaveOsc1 =  presets[i][3];
+  octaveOsc2 =  presets[i][5];
+  octaveBourdon1 =  presets[i][7];
+  octaveBourdon2 =  presets[i][9];
+
+  oscil2.setTable(getWaveFromInt(presets[i][4]));
+  activeOsc2 = presets[i][4];
+
+  bourdon1.setTable(getWaveFromInt(presets[i][6]));
+  activeBrd1 = presets[i][6];
+
+  bourdon2.setTable(getWaveFromInt(presets[i][8]));
+  activeBrd2 = presets[i][8];
+
+}
+
 static int menuSelectorSwitch(int newPos, int menuActiveItem){
 
   if(menuActiveItem==OCTAVE){
@@ -610,7 +664,7 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     encoder.setPosition(0);
     menuActiveItem = MENU_ATTACK;
   }
-  else if(menuActiveItem==ATTACK_DRONE){ 
+  else if(menuActiveItem==ATTACK_DRONE){
     attackBourdon = (attackBourdon+5*newPos)%255;
     encoder.setPosition(0);
     menuActiveItem = MENU_ATTACK;
@@ -644,15 +698,29 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
       menuActiveItem = HALFTONE;
     }
     else if(newPos%6 == 3){
-      menuActiveItem = SYNTH_SETTINGS;
+      if(mode == MODE_MIDI){
+        menuActiveItem = MIDI_SETTINGS;
+      }else if(mode == MODE_SYNTH){
+        menuActiveItem = SYNTH_SETTINGS;
+      }
     }
     else if(newPos%6 == 4){
-      menuActiveItem = MIDI_SETTINGS;
-    }
-    else if(newPos%6 == 5){
       menuActiveItem = DISPLAY_STATE;
     }
-  }else if(menuActiveItem==MENU_ATTACK){
+    else if(newPos%6 == 5){
+      menuActiveItem = PRESETS;
+    }
+  }else if(menuActiveItem==PRESETS){
+      //if(newPos%6 == 0){
+
+      if(newPos%8==7){
+        menuActiveItem = MAIN;
+      }
+      else{
+        setPresets(newPos);
+      }
+  }
+  else if(menuActiveItem==MENU_ATTACK){
     if(newPos%3 == 0){
       menuActiveItem = ATTACK_MAIN;
     }

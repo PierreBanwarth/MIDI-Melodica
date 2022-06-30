@@ -26,9 +26,21 @@
 #define THEME 15
 #define HALFTONE 16
 
+#define PRESETS 17
+
+
 #define MODE_MIDI 0
 #define MODE_SYNTH 1
-
+int presets[7][10] = {
+    //{oct, shift, osc1w, osc1oct, osc2w, osc2oct, brd1w, brd1oct, brd2w, brd2oct, },
+    {1,0, 1,1 ,1,1 ,1,1 ,1,1},
+    {1,0, 2,1 ,2,1 ,2,1 ,2,1},
+    {1,0, 3,1 ,3,1 ,3,1 ,3,1},
+    {1,0,  4,1 ,4,1 ,4,1 ,4,1},
+    {1,0,  1,2 ,1,3 ,1,4 ,1,5},
+    {1,6, 1,1 ,1,1 ,1,1 ,1,1},
+    {1,12, 1,1 ,1,1 ,1,1 ,1,1}
+};
 enum
 {
     // DEFINING MIDI notes
