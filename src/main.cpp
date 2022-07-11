@@ -40,7 +40,7 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial, MIDI);
 byte bourdonActifSynth = 0;
 byte bourdonPressed = 0;
 byte onOffSynth = 0;
-byte pousserTirer = 10;
+byte pousserTirer = 12;
 byte buttonEncoder = 3;
 byte stateButtonEncoder = HIGH;
 int encoderPosition ;
@@ -186,7 +186,6 @@ static void noteOn(int noteToPlay, int octave, int velocity){
 static void noteOff(int noteToShutdown, int octave){
   MIDI.sendNoteOff(noteToShutdown + 12*octave, 0, 1);
 }
-
 static void noteMidiDrum(uint8_t index, int velocity){
   uint8_t note = drum[index]+36;
   digitalWrite(pinButton[index], HIGH);
@@ -204,7 +203,6 @@ static void noteMidiDrum(uint8_t index, int velocity){
     oldStatePousser[index] = BUTTON_RELEASED;
   }
 }
-
 static void noteMidi(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity){
    //, uint8_t oldStatePousser, uint8_t oldStateTirer
   // velocity = 127;
@@ -650,7 +648,6 @@ static void setPresets(int i){
   activeBrd2 = presets[i][8];
 
 }
-
 static int menuSelectorSwitch(int newPos, int menuActiveItem){
 
   if(menuActiveItem==OCTAVE){
