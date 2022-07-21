@@ -60,7 +60,7 @@ byte activeBrd1 = 1;
 byte activeBrd2 = 1;
 
 byte attackTheme = 200;
-byte attackBourdon = 125;
+byte attackBourdon = 200;
 
 int wichOsc = 0;
 int globalFrequence;
@@ -68,7 +68,7 @@ int stateWave = 1;
 int bourdonSynthActivated = 0;
 int menuActiveItem = MAIN;
 
-byte mode = MODE_MIDI;
+byte mode = MODE_SYNTH;
 byte mode_midi = DRUM;
 
 int oscillator = 0;
@@ -500,14 +500,14 @@ static void display(byte newPos, int menuActiveItem){
     oled.println(attackTheme);
     oled.println(" ");
     oled.print("Volume : ");
-    oled.print((attackTheme+5*newPos)%255);
+    oled.print((attackTheme+(5*newPos))%255);
     oled.print(" ");
   }else if(menuActiveItem == ATTACK_DRONE){
     oled.print("Volume Main : ");
     oled.println(attackBourdon);
     oled.println(" ");
     oled.print("Volume : ");
-    oled.print((attackBourdon+5*newPos)%255);
+    oled.print((attackBourdon+(5*newPos))%255);
     oled.print(" ");
   }else if(menuActiveItem == PRESETS){
     oled.println("  Preset 1");
@@ -663,13 +663,13 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     encoder.setPosition(2);
 
   }else if(menuActiveItem==ATTACK_MAIN){
-    attackTheme = (attackTheme+5*newPos)%255;
+    attackTheme = (attackTheme+(5*newPos))%255;
     menuActiveItem = MENU_ATTACK;
     encoder.setPosition(0);
 
   }
   else if(menuActiveItem==ATTACK_DRONE){
-    attackBourdon = (attackBourdon+5*newPos)%255;
+    attackBourdon = (attackBourdon+(5*newPos))%255;
     menuActiveItem = MENU_ATTACK;
     encoder.setPosition(1);
 
