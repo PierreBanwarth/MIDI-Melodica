@@ -129,10 +129,12 @@ static void displayOsc(int i){
   if(i == 1){
     oled.print("Sin");
   }else if(i == 2){
-    oled.print("Tri");
+    oled.print("Cos");
   }else if(i == 3){
-    oled.print("Saw");
+    oled.print("Tri");
   }else if(i == 4){
+    oled.print("Saw");
+  }else if(i == 5){
     oled.print("Squ");
   }
 }
@@ -607,11 +609,12 @@ static void display(byte newPos, int menuActiveItem){
     oled.println("Wave Form :");
     printOscWave();
     oled.println("  Sin");
+    oled.println("  Cos");
     oled.println("  Tri");
     oled.println("  Saw");
     oled.println("  Square");
     oled.println("  Back");
-    oled.setCursor(0, (newPos%5)+2);
+    oled.setCursor(0, (newPos%6)+2);
     oled.print(">");
   }
 }
@@ -619,8 +622,10 @@ static const int8_t* getWaveFromInt(int i){
   if(i==1){
     return(SIN2048_DATA);
   }else if(i==2){
-    return(TRIANGLE2048_DATA);
+    return(COS2048_DATA);
   }else if(i==3){
+    return(TRIANGLE2048_DATA);
+  }else if(i==4){
     return(SAW2048_DATA);
   }else{
     return(SQUARE_NO_ALIAS_2048_DATA);
@@ -781,10 +786,11 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
       encoder.setPosition(0);
     }else{
       menuActiveItem = OSCILLATOR;
+      encoder.setPosition(0);
       oscillator = (newPos % 6)+1;
     }
   }else if(menuActiveItem==OSCILLATOR){
-    if(newPos%5 == 0){
+    if(newPos%6 == 0){
       if(oscillator == 1){
         oscil1.setTable(SIN2048_DATA);
         activeOsc1 = 1;
@@ -808,71 +814,95 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
         bourdon1.setTable(SIN2048_DATA);
         bourdon2.setTable(SIN2048_DATA);
       }
-    }else if(newPos%5 == 1){
+    }else if(newPos%6 == 1){
       if (oscillator == 1){
-        oscil1.setTable(TRIANGLE2048_DATA);
+        oscil1.setTable(COS2048_DATA);
         activeOsc1 = 2;
       }else if (oscillator == 2){
-        oscil2.setTable(TRIANGLE2048_DATA);
+        oscil2.setTable(COS2048_DATA);
         activeOsc2 = 2;
       }else if(oscillator == 3){
-        bourdon1.setTable(TRIANGLE2048_DATA);
+        bourdon1.setTable(COS2048_DATA);
         activeBrd1 = 2;
       }else if (oscillator == 4){
-        bourdon2.setTable(TRIANGLE2048_DATA);
+        bourdon2.setTable(COS2048_DATA);
         activeBrd2 = 2;
       }else if (oscillator == 5){
         activeOsc1 = 2;activeOsc2 = 2;activeBrd1 = 2;activeBrd2 = 2;
 
+        oscil1.setTable(COS2048_DATA);
+        oscil2.setTable(COS2048_DATA);
+        bourdon1.setTable(COS2048_DATA);
+        bourdon2.setTable(COS2048_DATA);
+      }
+    }else if(newPos%6 == 2){
+      if (oscillator == 1){
+        oscil1.setTable(TRIANGLE2048_DATA);
+        activeOsc1 = 3;
+      }else if (oscillator == 2){
+        oscil2.setTable(TRIANGLE2048_DATA);
+        activeOsc2 = 3;
+      }else if(oscillator == 3){
+        bourdon1.setTable(TRIANGLE2048_DATA);
+        activeBrd1 = 3;
+      }else if (oscillator == 4){
+        bourdon2.setTable(TRIANGLE2048_DATA);
+        activeBrd2 = 3;
+      }else if (oscillator == 5){
+        activeOsc1 = 3;
+        activeOsc2 = 3;
+        activeBrd1 = 3;
+        activeBrd2 = 3;
+
         oscil1.setTable(TRIANGLE2048_DATA);
         oscil2.setTable(TRIANGLE2048_DATA);
         bourdon1.setTable(TRIANGLE2048_DATA);
         bourdon2.setTable(TRIANGLE2048_DATA);
       }
-    }else if(newPos%5 == 2){
+    }else if(newPos%6 == 3){
       if (oscillator == 1){
         oscil1.setTable(SAW2048_DATA);
-        activeOsc1 = 3;
+        activeOsc1 = 4;
       }else if (oscillator == 2){
-        activeOsc2 = 3;
+        activeOsc2 = 4;
         oscil2.setTable(SAW2048_DATA);
       }else if(oscillator == 3){
-        activeBrd1 = 3;
+        activeBrd1 = 4;
         bourdon1.setTable(SAW2048_DATA);
       }else if (oscillator == 4){
-        activeBrd2 = 3;
+        activeBrd2 = 4;
         bourdon2.setTable(SAW2048_DATA);
       }else if (oscillator == 5){
-        activeOsc1 = 3;activeOsc2 = 3;activeBrd1 = 3;activeBrd2 = 3;
+        activeOsc1 = 4;activeOsc2 = 4;activeBrd1 = 4;activeBrd2 = 4;
         oscil1.setTable(SAW2048_DATA);
         oscil2.setTable(SAW2048_DATA);
         bourdon1.setTable(SAW2048_DATA);
         bourdon2.setTable(SAW2048_DATA);
       }
-    }else if(newPos%5 == 3){
+    }else if(newPos%6 == 4){
       if (oscillator == 1)        {
         oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeOsc1=4;
+        activeOsc1=5;
       }else if (oscillator == 2){
         oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeOsc2=4;
+        activeOsc2=5;
 
       }else if(oscillator == 3){
         bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeBrd1=4;
+        activeBrd1=5;
 
       }else if (oscillator == 4){
         bourdon2.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeBrd2=4;
+        activeBrd2=5;
 
       }else if (oscillator == 5){
-        activeOsc1=4;activeOsc2=4;activeBrd1=4;activeBrd2=4;
+        activeOsc1=5;activeOsc2=5;activeBrd1=5;activeBrd2=5;
         oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
         oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
         bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
         bourdon2.setTable(SQUARE_NO_ALIAS_2048_DATA);
       }
-    }else if(newPos%5 == 4){
+    }else if(newPos%6 == 5){
       menuActiveItem = WAVE;
       encoder.setPosition(oscillator-1);
       oscillator = 0;
