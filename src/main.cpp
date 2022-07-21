@@ -512,13 +512,11 @@ static void display(byte newPos, int menuActiveItem){
     oled.print((attackBourdon+(5*newPos))%255);
     oled.print(" ");
   }else if(menuActiveItem == PRESETS){
-    oled.println("  Preset 1");
-    oled.println("  Preset 2");
-    oled.println("  Preset 3");
-    oled.println("  Preset 4");
-    oled.println("  Preset 5");
-    oled.println("  Preset 6");
-    oled.println("  Preset 7");
+
+    for(int i=0; i<7; i++){
+      oled.print(" ");
+      oled.println(presetsNames[i]);
+    }
     oled.println("  Back");
     oled.setCursor(0, (newPos%8));
     oled.print(">");

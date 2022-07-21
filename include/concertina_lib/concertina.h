@@ -31,6 +31,18 @@
 
 #define MODE_MIDI 0
 #define MODE_SYNTH 1
+
+
+const char *presetsNames[7] = {
+ "Basse",
+ "Theme",
+ "Acid",
+ "Test",
+ "Test",
+ "Test",
+ "Test"
+};
+
 int presets[7][10] = {
     //{oct, shift, osc1w, osc1oct, osc2w, osc2oct, brd1w, brd1oct, brd2w, brd2oct, },
     {1,0, 1,1 ,1,1 ,1,1 ,1,1},
