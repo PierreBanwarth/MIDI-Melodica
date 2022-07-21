@@ -3,9 +3,6 @@
 
 #include "SSD1306AsciiWire.h"
 
-
-class Display {
-public:
+  void test(SSD1306AsciiWire oled);
   void displayShift(int i, SSD1306AsciiWire oled);
-};
 #endif

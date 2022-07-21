@@ -3,7 +3,11 @@
 
 #include "display.h"
 
-void Display::displayShift(int i, SSD1306AsciiWire oled){
+extern void test(SSD1306AsciiWire oled){
+  oled.print("test");
+}
+
+extern void displayShift(int i, SSD1306AsciiWire oled){
     if(i==0){
       oled.print("Sol#/Do#");
     }else if(i == 1){

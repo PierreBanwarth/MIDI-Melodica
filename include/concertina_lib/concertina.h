@@ -34,19 +34,24 @@
 
 
 const char *presetsNames[7] = {
- "Basse",
- "Theme",
+ "Bass",
+ "Square BrdTri",
  "Acid",
  "Test",
  "Test",
  "Test",
  "Test"
 };
-
+// 1 SIN
+// 2 COS
+// 3 TRI
+// 4 SAW
+// 5 SQUARE
 int presets[7][10] = {
-    //{oct, shift, osc1w, osc1oct, osc2w, osc2oct, brd1w, brd1oct, brd2w, brd2oct, },
-    {1,0, 1,1 ,1,1 ,1,1 ,1,1},
-    {1,0, 2,1 ,2,1 ,2,1 ,2,1},
+    //{oct, shift, osc1oct, osc2oct, brd1oct, brd2oct, osc1Wave, osc2Wave, brd1Wave, brd2Wave},
+    {4,11, -1,-2,-2,-3, 1,5,3,1},
+    {1,11, -3 ,-2 ,-2,-3 ,5,5,3,1},
+
     {1,0, 3,1 ,3,1 ,3,1 ,3,1},
     {1,0,  4,1 ,4,1 ,4,1 ,4,1},
     {1,0,  1,2 ,1,3 ,1,4 ,1,5},

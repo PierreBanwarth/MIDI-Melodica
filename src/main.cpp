@@ -5,7 +5,11 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 #include "RotaryEncoder.h"// RotaryEncoder v1.5.0 library by Matthais Hertel
+
 #include "concertina_lib/concertina.h"
+#include "concertina_lib/display.h"
+#include "concertina_lib/display.cpp"
+
 #include <MozziGuts.h>
 #include <Oscil.h>
 
@@ -53,7 +57,7 @@ int octaveOsc1 = 0;
 int octaveOsc2 = -1;
 int octaveBourdon1 = -2;
 int octaveBourdon2 = -3;
-int shiftHalfTone = 11;
+int8_t shiftHalfTone = 11;
 byte activeOsc1 = 1;
 byte activeOsc2 = 1;
 byte activeBrd1 = 1;
@@ -76,55 +80,7 @@ static int getShift(int i){
   // 0 -> 0
   return (i%23)-11;
 }
-static void displayShift(int i){
-  if(i==0){
-    oled.print("Sol#/Do#");
-  }else if(i == 1){
-    oled.print("La/Re");
-  }else if(i == 2){
-    oled.print("Sib/Re#");
-  }else if(i == 3){
-    oled.print("Si/Mi");
-  }else if(i == 4){
-    oled.print("Do/Fa");
-  }else if(i == 5){
-    oled.print("Do#/Fa#");
-  }else if(i == 6){
-    oled.print("Re/Sol");
-  }else if(i == 7){
-    oled.print("Re#/Sol#");
-  }else if(i == 8){
-    oled.print("Mi/La");
-  }else if(i == 9){
-    oled.print("Fa/Sib");
-  }else if(i == 10){
-    oled.print("Fa#/Si");
-  }else if(i == 11){
-    oled.print("Sol/Do");
-  }else if(i == 12){
-    oled.print("Sol#/Do#");
-  }else if(i == 13){
-    oled.print("La/Re");
-  }else if(i == 14){
-    oled.print("Sib/Re#");
-  }else if(i == 15){
-    oled.print("Si/Mi");
-  }else if(i == 16){
-    oled.print("Do/Fa");
-  }else if(i == 17){
-    oled.print("Do#/Fa#");
-  }else if(i == 18){
-    oled.print("Re/Sol");
-  }else if(i == 19){
-    oled.print("Re#/Sol#");
-  }else if(i == 20){
-    oled.print("Mi/La");
-  }else if(i == 21){
-    oled.print("Fa/Sib");
-  }else if(i == 22){
-    oled.print("Fa#/Si");
-  }
-}
+
 static void displayOsc(int i){
   if(i == 1){
     oled.print("Sin");
@@ -141,6 +97,7 @@ static void displayOsc(int i){
 static void displayMainTitle(){
   oled.println("Melodica MIDI");
   oled.println("V 1.0.0.0");
+  test(oled);
 }
 static void displayAttack(){
   oled.print("VOsc: ");
@@ -175,7 +132,7 @@ static void displayState(){
   oled.print("Oct: ");
   oled.print(octave);
   oled.print(" ");
-  displayShift(shiftHalfTone);
+  displayShift(shiftHalfTone, oled);
   oled.println("");
 
   displayAttack();
@@ -479,7 +436,7 @@ static void setOscOct(int osc, int value){
     octaveBourdon2 = value;
   }
 }
-static void display(byte newPos, int menuActiveItem){
+static void maindisplay(byte newPos, int menuActiveItem){
   oled.clear();
 
   if(menuActiveItem==OCTAVE){
@@ -492,10 +449,10 @@ static void display(byte newPos, int menuActiveItem){
   }
   else if(menuActiveItem==HALFTONE){
     oled.print("Actual ");
-    displayShift(shiftHalfTone);
+    displayShift(shiftHalfTone, oled);
     oled.println("");
     oled.print("New : ");
-    displayShift(newPos);
+    displayShift(newPos, oled);
     oled.print(" ");
   }else if(menuActiveItem == ATTACK_MAIN){
     oled.print("Volume Main : ");
@@ -635,22 +592,23 @@ static void setPresets(int i){
   oled.print(i);
   octave = presets[i][0];
   shiftHalfTone = presets[i][1];
-  oscil1.setTable(getWaveFromInt(presets[i][2]));
-  activeOsc1 = presets[i][2];
 
-  octaveOsc1 =  presets[i][3];
-  octaveOsc2 =  presets[i][5];
-  octaveBourdon1 =  presets[i][7];
-  octaveBourdon2 =  presets[i][9];
+  octaveOsc1 =  presets[i][2];
+  octaveOsc2 =  presets[i][3];
+  octaveBourdon1 =  presets[i][4];
+  octaveBourdon2 =  presets[i][5];
 
-  oscil2.setTable(getWaveFromInt(presets[i][4]));
-  activeOsc2 = presets[i][4];
+  oscil1.setTable(getWaveFromInt(presets[i][6]));
+  activeOsc1 = presets[i][6];
 
-  bourdon1.setTable(getWaveFromInt(presets[i][6]));
-  activeBrd1 = presets[i][6];
+  oscil2.setTable(getWaveFromInt(presets[i][7]));
+  activeOsc2 = presets[i][7];
 
-  bourdon2.setTable(getWaveFromInt(presets[i][8]));
-  activeBrd2 = presets[i][8];
+  bourdon1.setTable(getWaveFromInt(presets[i][8]));
+  activeBrd1 = presets[i][8];
+
+  bourdon2.setTable(getWaveFromInt(presets[i][9]));
+  activeBrd2 = presets[i][9];
 
 }
 static int menuSelectorSwitch(int newPos, int menuActiveItem){
@@ -914,13 +872,13 @@ static void menuSelector(){
   int state = digitalRead(buttonEncoder);
   if (encoderPosition != newPos)
   {
-    display(newPos, menuActiveItem);
+    maindisplay(newPos, menuActiveItem);
     encoderPosition = newPos;
   }
   if(state == LOW && state != stateButtonEncoder){
     menuActiveItem = menuSelectorSwitch(newPos, menuActiveItem);
     stateButtonEncoder = LOW;
-    display(encoderPosition, menuActiveItem);
+    maindisplay(encoderPosition, menuActiveItem);
   }
   stateButtonEncoder = state;
 }
@@ -947,7 +905,7 @@ void setup() {
     digitalWrite(pinButton[pin],HIGH);
   }
 
-  display(0, menuActiveItem);
+  maindisplay(0, menuActiveItem);
 }
 void loop() {
 
