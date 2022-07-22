@@ -58,10 +58,10 @@ int octaveOsc2 = -1;
 int octaveBourdon1 = -2;
 int octaveBourdon2 = -3;
 int8_t shiftHalfTone = 11;
-byte activeOsc1 = 1;
-byte activeOsc2 = 1;
-byte activeBrd1 = 1;
-byte activeBrd2 = 1;
+byte activeOsc1 = 0;
+byte activeOsc2 = 0;
+byte activeBrd1 = 0;
+byte activeBrd2 = 0;
 
 byte attackTheme = 200;
 byte attackBourdon = 200;
@@ -81,66 +81,6 @@ static int getShift(int i){
   return (i%23)-11;
 }
 
-static void displayOsc(int i){
-  if(i == 1){
-    oled.print("Sin");
-  }else if(i == 2){
-    oled.print("Cos");
-  }else if(i == 3){
-    oled.print("Tri");
-  }else if(i == 4){
-    oled.print("Saw");
-  }else if(i == 5){
-    oled.print("Squ");
-  }
-}
-static void displayMainTitle(){
-  oled.println("Melodica MIDI");
-  oled.println("V 1.0.0.0");
-  test(oled);
-}
-static void displayAttack(){
-  oled.print("VOsc: ");
-  oled.print(attackTheme);
-  oled.print(" VBrd: ");
-  oled.println(attackBourdon);
-}
-static void printOscWave(){
-  displayOsc(activeOsc1);
-  oled.print(" ");
-  displayOsc(activeOsc2);
-  oled.print(" ");
-  displayOsc(activeBrd1);
-  oled.print(" ");
-  displayOsc(activeBrd2);
-  oled.println("");
-}
-static void printOscOct(){
-  oled.print("Oct: ");
-  oled.print(octaveOsc1);
-  oled.print("   ");
-  oled.print(octaveOsc2);
-  oled.print("   ");
-  oled.print(octaveBourdon1);
-  oled.print("  ");
-  oled.print(octaveBourdon2);
-  oled.println("");
-
-}
-static void displayState(){
-  displayMainTitle();
-  oled.print("Oct: ");
-  oled.print(octave);
-  oled.print(" ");
-  displayShift(shiftHalfTone, oled);
-  oled.println("");
-
-  displayAttack();
-  oled.println("  -------------------");
-  oled.println("  Osc1 Osc2 Brd1 Brd2");
-  printOscOct();
-  printOscWave();
-}
 static void noteOn(int noteToPlay, int octave, int velocity){
   MIDI.sendNoteOn(noteToPlay + 12*octave, velocity, 1);
 }
@@ -436,143 +376,66 @@ static void setOscOct(int osc, int value){
     octaveBourdon2 = value;
   }
 }
+
 static void maindisplay(byte newPos, int menuActiveItem){
   oled.clear();
-
   if(menuActiveItem==OCTAVE){
-    oled.print("Octave : ");
-    oled.println(octave);
-
-    oled.print("Oct : ");
-    oled.println((newPos)%6);
-    oled.print(" ");
-  }
-  else if(menuActiveItem==HALFTONE){
-    oled.print("Actual ");
-    displayShift(shiftHalfTone, oled);
-    oled.println("");
-    oled.print("New : ");
-    displayShift(newPos, oled);
-    oled.print(" ");
+    oled = displayOctave(octave, newPos, oled);
+  }else if(menuActiveItem==HALFTONE){
+    oled = displayHalfTone(shiftHalfTone, newPos, oled);
   }else if(menuActiveItem == ATTACK_MAIN){
-    oled.print("Volume Main : ");
-    oled.println(attackTheme);
-    oled.println(" ");
-    oled.print("Volume : ");
-    oled.print((attackTheme+(5*newPos))%255);
-    oled.print(" ");
+    oled = displayAttackSwitch(attackTheme, newPos, oled);
   }else if(menuActiveItem == ATTACK_DRONE){
-    oled.print("Volume Main : ");
-    oled.println(attackBourdon);
-    oled.println(" ");
-    oled.print("Volume : ");
-    oled.print((attackBourdon+(5*newPos))%255);
-    oled.print(" ");
+    oled = displayAttackSwitch(attackBourdon, newPos, oled);
   }else if(menuActiveItem == PRESETS){
-
-    for(int i=0; i<7; i++){
-      oled.print(" ");
-      oled.println(presetsNames[i]);
-    }
-    oled.println("  Back");
-    oled.setCursor(0, (newPos%8));
-    oled.print(">");
-
+    oled = displayPresetsMenu(newPos, oled);
   }else if(menuActiveItem == CHOOSE_OCTAVE){
-    printOscOct();
-    oled.println("");
-    oled.print(newPos%6 -3);
-    oled.print(" ");
+    oled = printOctaveMenu(newPos,octaveOsc1, octaveOsc2, octaveBourdon1, octaveBourdon2, oled);
   }else if(menuActiveItem == MAIN){
-    displayMainTitle();
-    oled.print("  Mode : ");
-    if(mode == MODE_MIDI){
-      oled.println("MIDI");
-
-    }else if(mode == MODE_SYNTH){
-      oled.println("Synth");
-    }
-    oled.println("  Octave");
-    oled.println("  HalfTone");
-    if(mode == MODE_MIDI){
-      oled.println("  MIDI setup");
-
-    }else if(mode == MODE_SYNTH){
-      oled.println("  SYNTH setup");
-    }
-
-    oled.println("  State");
-    oled.println("  Presets");
-    oled.setCursor(0, (newPos%6)+2);
-    oled.print(">");
-  }
-  else if(menuActiveItem == MIDI_SETTINGS){
-    oled.println("MIDI settings");
-    oled.println(" ");
-    oled.print("  Mode : ");
-    if(mode_midi == DRUM){
-      oled.println("DRUM !!!");
-    }else if(mode_midi == THEME){
-      oled.println("Theme");
-    }
-    oled.println("  Back");
-    oled.setCursor(0, (newPos%2)+2);
-    oled.print(">");
-  }
-  else if(menuActiveItem == SYNTH_SETTINGS){
-    oled.println("Synth");
-    oled.println("");
-    oled.println("  Waveform");
-    oled.println("  Volume");
-    oled.println("  Osc Oct");
-    oled.println("  Back");
-    oled.setCursor(0, (newPos%4)+2);
-    oled.print(">");
+    oled = displayMainMenu(mode, newPos, oled);
+  }else if(menuActiveItem == MIDI_SETTINGS){
+    oled = displayMidiSettings(mode_midi, newPos, oled);
+  }else if(menuActiveItem == SYNTH_SETTINGS){
+    oled = displaySynthSettingsFirstMenu(newPos, oled);
   }else if(menuActiveItem == DISPLAY_STATE){
-    displayState();
+    oled = displayState(
+      octave,
+      shiftHalfTone,
+      attackTheme,
+      attackBourdon,
+      activeOsc1,
+      activeOsc2,
+      activeBrd1,
+      activeBrd2,
+      octaveOsc1,
+      octaveOsc2,
+      octaveBourdon1,
+      octaveBourdon2,
+      oled
+    );
   }
   else if (menuActiveItem == MENU_ATTACK){
-    oled.println("Volume :");
-    displayAttack();
-    oled.println("  Theme");
-    oled.println("  Drone");
-    oled.println("  Back");
-    oled.setCursor(0, (newPos%3)+2);
-    oled.print(">");
-  }
-  else if (menuActiveItem == OCT_OSC || menuActiveItem == WAVE)
-  {
-    if(menuActiveItem == OCT_OSC){
-      oled.println("Oct osc :");
-      printOscOct();
-
-    }else{
-      oled.println("Wave :");
-      printOscWave();
-    }
-    oled.println("  Osc1 ");
-    oled.println("  Osc2 ");
-    oled.println("  Drone1");
-    oled.println("  Drone2 ");
-    oled.println("  All ");
-    oled.println("  Back ");
-    oled.setCursor(0, (newPos%6)+2);
-    oled.print(">");
-
-  }else if (menuActiveItem == OSCILLATOR)
-  {
-    oled.println("Wave Form :");
-    printOscWave();
-    oled.println("  Sin");
-    oled.println("  Cos");
-    oled.println("  Tri");
-    oled.println("  Saw");
-    oled.println("  Square");
-    oled.println("  Back");
-    oled.setCursor(0, (newPos%6)+2);
-    oled.print(">");
+    oled = displayMenuAttack(attackTheme, attackBourdon, newPos, oled);
+  }else if (menuActiveItem == OCT_OSC || menuActiveItem == WAVE){
+    oled = displayOctOrWave(
+      menuActiveItem,
+      newPos,
+      octaveOsc1,
+      octaveOsc2,
+      octaveBourdon1,
+      octaveBourdon2,
+      activeOsc1,
+      activeOsc2,
+      activeBrd1,
+      activeBrd2,
+      oled
+    );
+  }else if (menuActiveItem == OSCILLATOR){
+    oled = displayOscillatorChoice(newPos, activeOsc1, activeOsc2, activeBrd1, activeBrd2, oled);
   }
 }
+
+
 static const int8_t* getWaveFromInt(int i){
   if(i==1){
     return(SIN2048_DATA);
@@ -749,22 +612,22 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     if(newPos%6 == 0){
       if(oscillator == 1){
         oscil1.setTable(SIN2048_DATA);
-        activeOsc1 = 1;
+        activeOsc1 = 0;
 
       }else if(oscillator == 2){
         oscil2.setTable(SIN2048_DATA);
-        activeOsc2 = 1;
+        activeOsc2 = 0;
 
       }else if(oscillator == 3){
         bourdon1.setTable(SIN2048_DATA);
-        activeBrd1 = 1;
+        activeBrd1 = 0;
 
       }else if (oscillator == 4){
         bourdon2.setTable(SIN2048_DATA);
-        activeBrd2 = 1;
+        activeBrd2 = 0;
 
       }else if (oscillator == 5){
-        activeOsc1 = 1;activeOsc2 = 1;activeBrd1 = 1;activeBrd2 = 1;
+        activeOsc1 = 0;activeOsc2 = 0;activeBrd1 = 0;activeBrd2 = 0;
         oscil1.setTable(SIN2048_DATA);
         oscil2.setTable(SIN2048_DATA);
         bourdon1.setTable(SIN2048_DATA);
@@ -773,18 +636,18 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 1){
       if (oscillator == 1){
         oscil1.setTable(COS2048_DATA);
-        activeOsc1 = 2;
+        activeOsc1 = 1;
       }else if (oscillator == 2){
         oscil2.setTable(COS2048_DATA);
-        activeOsc2 = 2;
+        activeOsc2 = 1;
       }else if(oscillator == 3){
         bourdon1.setTable(COS2048_DATA);
-        activeBrd1 = 2;
+        activeBrd1 = 1;
       }else if (oscillator == 4){
         bourdon2.setTable(COS2048_DATA);
-        activeBrd2 = 2;
+        activeBrd2 = 1;
       }else if (oscillator == 5){
-        activeOsc1 = 2;activeOsc2 = 2;activeBrd1 = 2;activeBrd2 = 2;
+        activeOsc1 = 1;activeOsc2 = 1;activeBrd1 = 1;activeBrd2 = 1;
 
         oscil1.setTable(COS2048_DATA);
         oscil2.setTable(COS2048_DATA);
@@ -794,21 +657,21 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 2){
       if (oscillator == 1){
         oscil1.setTable(TRIANGLE2048_DATA);
-        activeOsc1 = 3;
+        activeOsc1 = 2;
       }else if (oscillator == 2){
         oscil2.setTable(TRIANGLE2048_DATA);
-        activeOsc2 = 3;
+        activeOsc2 = 2;
       }else if(oscillator == 3){
         bourdon1.setTable(TRIANGLE2048_DATA);
-        activeBrd1 = 3;
+        activeBrd1 = 2;
       }else if (oscillator == 4){
         bourdon2.setTable(TRIANGLE2048_DATA);
-        activeBrd2 = 3;
+        activeBrd2 = 2;
       }else if (oscillator == 5){
-        activeOsc1 = 3;
-        activeOsc2 = 3;
-        activeBrd1 = 3;
-        activeBrd2 = 3;
+        activeOsc1 = 2;
+        activeOsc2 = 2;
+        activeBrd1 = 2;
+        activeBrd2 = 2;
 
         oscil1.setTable(TRIANGLE2048_DATA);
         oscil2.setTable(TRIANGLE2048_DATA);
@@ -818,18 +681,18 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 3){
       if (oscillator == 1){
         oscil1.setTable(SAW2048_DATA);
-        activeOsc1 = 4;
+        activeOsc1 = 3;
       }else if (oscillator == 2){
-        activeOsc2 = 4;
+        activeOsc2 = 3;
         oscil2.setTable(SAW2048_DATA);
       }else if(oscillator == 3){
-        activeBrd1 = 4;
+        activeBrd1 = 3;
         bourdon1.setTable(SAW2048_DATA);
       }else if (oscillator == 4){
-        activeBrd2 = 4;
+        activeBrd2 = 3;
         bourdon2.setTable(SAW2048_DATA);
       }else if (oscillator == 5){
-        activeOsc1 = 4;activeOsc2 = 4;activeBrd1 = 4;activeBrd2 = 4;
+        activeOsc1 = 3;activeOsc2 = 3;activeBrd1 = 3;activeBrd2 = 3;
         oscil1.setTable(SAW2048_DATA);
         oscil2.setTable(SAW2048_DATA);
         bourdon1.setTable(SAW2048_DATA);
@@ -838,21 +701,21 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 4){
       if (oscillator == 1)        {
         oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeOsc1=5;
+        activeOsc1=4;
       }else if (oscillator == 2){
         oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeOsc2=5;
+        activeOsc2=4;
 
       }else if(oscillator == 3){
         bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeBrd1=5;
+        activeBrd1=4;
 
       }else if (oscillator == 4){
         bourdon2.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeBrd2=5;
+        activeBrd2=4;
 
       }else if (oscillator == 5){
-        activeOsc1=5;activeOsc2=5;activeBrd1=5;activeBrd2=5;
+        activeOsc1=4;activeOsc2=4;activeBrd1=4;activeBrd2=4;
         oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
         oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
         bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
