@@ -8,25 +8,23 @@
   void test(SSD1306AsciiWire oled);
   void displayShift(uint8_t i, SSD1306AsciiWire oled);
   SSD1306AsciiWire displayMainTitle(SSD1306AsciiWire oled);
-  SSD1306AsciiWire displayAttack(uint8_t attackTheme, uint8_t attackBourdon, SSD1306AsciiWire oled);
+  SSD1306AsciiWire displayAttack(Configuration conf, SSD1306AsciiWire oled);
   SSD1306AsciiWire printOscWave(Configuration conf, SSD1306AsciiWire oled);
   SSD1306AsciiWire displayOscillatorChoice(uint8_t newPos, Configuration conf, SSD1306AsciiWire oled);
 
   SSD1306AsciiWire displayOctave(Configuration conf, uint8_t newPos, SSD1306AsciiWire oled);
   SSD1306AsciiWire displayHalfTone(Configuration conf, uint8_t newPos, SSD1306AsciiWire oled);
-  SSD1306AsciiWire displayAttack(uint8_t attack, uint8_t newPos, SSD1306AsciiWire oled);
+  SSD1306AsciiWire displayAttack(Configuration conf, uint8_t newPos, SSD1306AsciiWire oled);
   SSD1306AsciiWire displayPresetsMenu(uint8_t newPos, SSD1306AsciiWire oled);
   SSD1306AsciiWire displayMainMenu(uint8_t mode, uint8_t newPos, SSD1306AsciiWire oled);
   SSD1306AsciiWire displayMidiSettings(uint8_t mode, uint8_t newPos, SSD1306AsciiWire oled);
   SSD1306AsciiWire displaySynthSettingsFirstMenu(uint8_t newPos, SSD1306AsciiWire oled);
-  SSD1306AsciiWire displayMenuAttack(uint8_t attackMain, uint8_t attackBourdon, uint8_t newPos, SSD1306AsciiWire oled);
+  SSD1306AsciiWire displayMenuAttack(Configuration conf, uint8_t newPos, SSD1306AsciiWire oled);
   SSD1306AsciiWire printOscOct(Configuration conf, SSD1306AsciiWire oled);
   SSD1306AsciiWire printOctaveMenu(uint8_t newPos, Configuration conf, SSD1306AsciiWire oled);
 
   SSD1306AsciiWire displayState(
     Configuration conf,
-    uint8_t attackTheme,
-    uint8_t attackBourdon,
     SSD1306AsciiWire oled
   );
 

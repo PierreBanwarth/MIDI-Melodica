@@ -18,11 +18,11 @@ extern SSD1306AsciiWire displayMainTitle(SSD1306AsciiWire oled){
   oled.println("V 1.0.0.0");
   return oled;
 }
-extern SSD1306AsciiWire displayAttack(uint8_t  attackTheme, uint8_t  attackBourdon, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayAttack(Configuration conf, SSD1306AsciiWire oled){
   oled.print("VOsc: ");
-  oled.print(attackTheme);
+  oled.print(conf.attackTheme);
   oled.print(" VBrd: ");
-  oled.println(attackBourdon);
+  oled.println(conf.attackBourdon);
   return oled;
 }
 
@@ -103,7 +103,6 @@ extern SSD1306AsciiWire displayMainMenu(uint8_t mode, uint8_t newPos, SSD1306Asc
   }else if(mode == MODE_SYNTH){
     oled.println("  SYNTH setup");
   }
-
   oled.println("  State");
   oled.println("  Presets");
   oled.setCursor(0, (newPos%6)+2);
@@ -126,9 +125,9 @@ extern SSD1306AsciiWire displayMidiSettings(uint8_t mode_midi, uint8_t newPos, S
   return oled;
 
 }
-extern SSD1306AsciiWire displayMenuAttack(uint8_t attackMain, uint8_t attackBourdon, uint8_t newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayMenuAttack(Configuration conf, uint8_t newPos, SSD1306AsciiWire oled){
   oled.println("Volume :");
-  oled = displayAttack(attackMain, attackBourdon, oled);
+  oled = displayAttack(conf, oled);
   oled.println("  Theme");
   oled.println("  Drone");
   oled.println("  Back");
@@ -151,8 +150,6 @@ extern SSD1306AsciiWire displaySynthSettingsFirstMenu(uint8_t newPos, SSD1306Asc
 
 extern SSD1306AsciiWire displayState(
   Configuration conf,
-  uint8_t attackTheme,
-  uint8_t attackBourdon,
   SSD1306AsciiWire oled
 ){
   oled = displayMainTitle(oled);
@@ -162,7 +159,7 @@ extern SSD1306AsciiWire displayState(
   displayShift(conf.shiftHalfTone, oled);
   oled.println("");
 
-  oled = displayAttack(attackTheme, attackBourdon, oled);
+  oled = displayAttack(conf, oled);
   oled.println("  -------------------");
   oled.println("  Osc1 Osc2 Brd1 Brd2");
   oled = printOscOct(conf, oled);
@@ -217,5 +214,46 @@ SSD1306AsciiWire printOctaveMenu(uint8_t newPos, Configuration conf, SSD1306Asci
   oled.println("");
   oled.print(newPos%6 -3);
   oled.print(" ");
+  return oled;
+}
+
+SSD1306AsciiWire maindisplay(uint8_t newPos, uint8_t mode, uint8_t mode_midi, uint8_t menuActiveItem, Configuration conf, SSD1306AsciiWire oled){
+  oled.clear();
+  if(menuActiveItem==OCTAVE){
+    oled = displayOctave(conf, newPos, oled);
+  }else if(menuActiveItem==HALFTONE){
+    oled = displayHalfTone(conf, newPos, oled);
+  }else if(menuActiveItem == ATTACK_MAIN){
+    oled = displayAttackSwitch(conf.attackTheme, newPos, oled);
+  }else if(menuActiveItem == ATTACK_DRONE){
+    oled = displayAttackSwitch(conf.attackBourdon, newPos, oled);
+  }else if(menuActiveItem == PRESETS){
+    oled = displayPresetsMenu(newPos, oled);
+  }else if(menuActiveItem == CHOOSE_OCTAVE){
+    oled = printOctaveMenu(newPos,conf, oled);
+  }else if(menuActiveItem == MAIN){
+    oled = displayMainMenu(mode, newPos, oled);
+  }else if(menuActiveItem == MIDI_SETTINGS){
+    oled = displayMidiSettings(mode_midi, newPos, oled);
+  }else if(menuActiveItem == SYNTH_SETTINGS){
+    oled = displaySynthSettingsFirstMenu(newPos, oled);
+  }else if(menuActiveItem == DISPLAY_STATE){
+    oled = displayState(
+      conf,
+      oled
+    );
+  }
+  else if (menuActiveItem == MENU_ATTACK){
+    oled = displayMenuAttack(conf, newPos, oled);
+  }else if (menuActiveItem == OCT_OSC || menuActiveItem == WAVE){
+    oled = displayOctOrWave(
+      menuActiveItem,
+      newPos,
+      conf,
+      oled
+    );
+  }else if (menuActiveItem == OSCILLATOR){
+    oled = displayOscillatorChoice(newPos, conf, oled);
+  }
   return oled;
 }

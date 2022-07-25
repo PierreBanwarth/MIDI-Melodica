@@ -6,14 +6,16 @@ Configuration::Configuration(
   String s,
   uint8_t o,
   uint8_t shift,
-  uint8_t oct1,
-  uint8_t oct2,
-  uint8_t oct3,
-  uint8_t oct4,
+  int8_t oct1,
+  int8_t oct2,
+  int8_t oct3,
+  int8_t oct4,
   uint8_t osc1,
   uint8_t osc2,
   uint8_t brd1,
-  uint8_t brd2
+  uint8_t brd2,
+  uint8_t attackT,
+  uint8_t attackB
 )
 {
   presetName = s;
@@ -27,11 +29,13 @@ Configuration::Configuration(
   activeOsc2 = osc2;
   activeBrd1 = brd1;
   activeBrd2 = brd2;
+  attackTheme = attackT;
+  attackBourdon = attackB;
 }
 String Configuration::getName(){
   return presetName;
 }
-void Configuration::setOctaveOsc(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
+void Configuration::setOctaveOsc(int8_t a, int8_t b, int8_t c, int8_t d){
   octaveOsc1 = a;
   octaveOsc2 = b;
   octaveBourdon1 = c;
