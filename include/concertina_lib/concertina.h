@@ -3,7 +3,7 @@
 #include "Arduino.h"
 #include <MIDI.h>
 #include <Tone.h>
-
+#include "concertina_lib/configuration.h"
 #define OCTAVE 1
 #define MODE 2
 #define DISPLAY_STATE 3
@@ -34,31 +34,41 @@
 
 enum waveform { SIN = 1, COS = 2, TRI = 3, SAW = 4, SQUARE = 5};
 
-const char *presetsNames[7] = {
- "Bass",
- "Square BrdTri",
- "Acid",
- "Test",
- "Test",
- "Test",
- "Test"
+const Configuration newPresets[] = {
+  Configuration("Bass", 4,11, -1,-2,-2,-3, 0,4,2,0),
+  Configuration("Squ Tri",1,11, -3 ,-2 ,-2,-3 ,4,4,2,0),
+  Configuration("Acid", 1,0, 3,1 ,3,1 ,3,1 ,3,1),
+  Configuration("Test",1,0,  4,1 ,4,1 ,4,1 ,4,1),
+  Configuration("Test",1,0,  1,2 ,1,3 ,1,4 ,1,5),
+  Configuration("Test",1,6, 1,1 ,1,1 ,1,1 ,1,1),
+  Configuration("Test",1,12, 1,1 ,1,1 ,1,1 ,1,1)
 };
-// 1 SIN
-// 2 COS
-// 3 TRI
-// 4 SAW
-// 5 SQUARE
-int presets[7][10] = {
-    //{oct, shift, osc1oct, osc2oct, brd1oct, brd2oct, osc1Wave, osc2Wave, brd1Wave, brd2Wave},
-    {4,11, -1,-2,-2,-3, 0,4,2,0},
-    {1,11, -3 ,-2 ,-2,-3 ,4,4,2,0},
 
-    {1,0, 3,1 ,3,1 ,3,1 ,3,1},
-    {1,0,  4,1 ,4,1 ,4,1 ,4,1},
-    {1,0,  1,2 ,1,3 ,1,4 ,1,5},
-    {1,6, 1,1 ,1,1 ,1,1 ,1,1},
-    {1,12, 1,1 ,1,1 ,1,1 ,1,1}
-};
+// const char *presetsNames[7] = {
+//  "Bass",
+//  "Square BrdTri",
+//  "Acid",
+//  "Test",
+//  "Test",
+//  "Test",
+//  "Test"
+// };
+// // 1 SIN
+// // 2 COS
+// // 3 TRI
+// // 4 SAW
+// // 5 SQUARE
+// int presets[7][10] = {
+//     //{oct, shift, osc1oct, osc2oct, brd1oct, brd2oct, osc1Wave, osc2Wave, brd1Wave, brd2Wave},
+//     {4,11, -1,-2,-2,-3, 0,4,2,0},
+//     {1,11, -3 ,-2 ,-2,-3 ,4,4,2,0},
+//
+//     {1,0, 3,1 ,3,1 ,3,1 ,3,1},
+//     {1,0,  4,1 ,4,1 ,4,1 ,4,1},
+//     {1,0,  1,2 ,1,3 ,1,4 ,1,5},
+//     {1,6, 1,1 ,1,1 ,1,1 ,1,1},
+//     {1,12, 1,1 ,1,1 ,1,1 ,1,1}
+// };
 enum
 {
     // DEFINING MIDI notes

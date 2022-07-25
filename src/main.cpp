@@ -9,6 +9,8 @@
 #include "concertina_lib/concertina.h"
 #include "concertina_lib/display.h"
 #include "concertina_lib/display.cpp"
+#include "concertina_lib/configuration.cpp"
+#include "concertina_lib/configuration.h"
 
 #include <MozziGuts.h>
 #include <Oscil.h>
@@ -49,22 +51,27 @@ byte buttonEncoder = 3;
 byte stateButtonEncoder = HIGH;
 int encoderPosition ;
 byte oldStatePousserTirer = 0;
-
-byte octave = 4;
-
 int indexMenu = 0;
-int octaveOsc1 = 0;
-int octaveOsc2 = -1;
-int octaveBourdon1 = -2;
-int octaveBourdon2 = -3;
-int8_t shiftHalfTone = 11;
-byte activeOsc1 = 0;
-byte activeOsc2 = 0;
-byte activeBrd1 = 0;
-byte activeBrd2 = 0;
+
+
+
+Configuration conf = Configuration("Defaut", 4, 11, 0,-1,-2,-3, 0,0,0,0);
+
+// byte octave = 4;
+// int octaveOsc1 = 0;
+// int octaveOsc2 = -1;
+// int octaveBourdon1 = -2;
+// int octaveBourdon2 = -3;
+// int8_t shiftHalfTone = 11;
+// byte activeOsc1 = 0;
+// byte activeOsc2 = 0;
+// byte activeBrd1 = 0;
+// byte activeBrd2 = 0;
+
 
 byte attackTheme = 200;
 byte attackBourdon = 200;
+
 
 int wichOsc = 0;
 int globalFrequence;
@@ -76,118 +83,11 @@ byte mode = MODE_SYNTH;
 byte mode_midi = DRUM;
 
 int oscillator = 0;
+
+
 static int getShift(int i){
   // 0 -> 0
   return (i%23)-11;
-}
-
-static void noteOn(int noteToPlay, int octave, int velocity){
-  MIDI.sendNoteOn(noteToPlay + 12*octave, velocity, 1);
-}
-static void noteOff(int noteToShutdown, int octave){
-  MIDI.sendNoteOff(noteToShutdown + 12*octave, 0, 1);
-}
-static void noteMidiDrum(uint8_t index, int velocity){
-  uint8_t note = drum[index]+36;
-  digitalWrite(pinButton[index], HIGH);
-  uint8_t bouton = digitalRead(pinButton[index]);
-  if (bouton == LOW)
-  {
-    // on pousse sur le bouton et sur le soufflet
-    if(oldStatePousser[index] == BUTTON_RELEASED){
-      oldStatePousser[index] = BUTTON_PRESSED;
-      noteOn(note, 0, 127);
-    }
-
-  }else{
-    noteOff(note, 0);
-    oldStatePousser[index] = BUTTON_RELEASED;
-  }
-}
-static void noteMidi(uint8_t sens_soufflet, uint8_t index, uint8_t octave, int velocity){
-   //, uint8_t oldStatePousser, uint8_t oldStateTirer
-  // velocity = 127;
-  digitalWrite(pinButton[index], HIGH);
-  uint8_t bouton = digitalRead(pinButton[index]);
-  // digitalWrite(pinButton[index], LOW);
-  uint8_t noteA = pousser[index] + getShift(shiftHalfTone);
-  uint8_t noteB = tirer[index] + getShift(shiftHalfTone);
-  if (pousser[index] != 0 || tirer[index] != 0)
-  {
-    // higher velocity usually makes MIDI instruments louder
-    if (bouton == LOW)
-    {
-      if (sens_soufflet == LOW)
-      {
-        // on pousse sur le bouton et sur le soufflet
-        if (oldStatePousser[index] == BUTTON_RELEASED)
-        {
-          noteOn(noteA, octave, velocity);
-          oldStatePousser[index] = BUTTON_PRESSED;
-          if (oldStateTirer[index] == BUTTON_PRESSED)
-          {
-            noteOff(noteB, octave);
-            oldStateTirer[index] = BUTTON_RELEASED;
-          }
-        }
-      }
-      else
-      { // on tire sur le soufflet et on appuie sur le bouton
-        if (oldStateTirer[index] == 0)
-        {
-
-          noteOn(noteB, octave, velocity);
-          oldStateTirer[index] = BUTTON_PRESSED;
-          if (oldStatePousser[index] == BUTTON_PRESSED)
-          {
-            noteOff(noteA, octave);
-            oldStatePousser[index] = BUTTON_RELEASED;
-          }
-        }
-      }
-    }
-    else
-    {
-      if (oldStatePousser[index] == BUTTON_PRESSED)
-      {
-        noteOff(noteA, octave);
-        oldStatePousser[index] = BUTTON_RELEASED;
-      }
-      if (oldStateTirer[index] == BUTTON_PRESSED)
-      {
-        // on appuie pas sur le bouton ma
-        noteOff(noteB, octave);
-        oldStateTirer[index] = BUTTON_RELEASED;
-      }
-    }
-  }
-
-}
-static void noteMidiBourdon(uint8_t index, uint8_t octave, int velocity){
-  //, uint8_t oldStatePousser, uint8_t oldStateTirer
-  // velocity = 127;
-  digitalWrite(pinButton[index], HIGH);
-  uint8_t bouton = digitalRead(pinButton[index]);
-  // digitalWrite(pinButton[index], LOW);
-  uint8_t note = pousser[index]+getShift(shiftHalfTone);
-  if (bouton == LOW)
-  {
-
-    // on pousse sur le bouton et sur le soufflet
-    if(oldStatePousser[index] == BUTTON_RELEASED){
-      oldStatePousser[index] = BUTTON_PRESSED;
-      if(bourdonActif[index] == 1){
-        noteOff(note, octave);
-        bourdonActif[index] = 0;
-      }else{
-        noteOn(note, octave, velocity/2);
-        bourdonActif[index] = 1;
-      }
-    }
-
-  }else{
-    oldStatePousser[index] = BUTTON_RELEASED;
-  }
 }
 static int getOctaveValueToMultiplyForOsc(int osc, int frequence, int octaveValue){
   int freq = frequence;
@@ -215,22 +115,131 @@ static int getOctaveValueToMultiplyForOsc(int osc, int frequence, int octaveValu
   }
   return freq;
 }
-static void noteOnSynth(int frequence, int octave){
-  oscil1.setFreq(getOctaveValueToMultiplyForOsc(octaveOsc1, frequence, octave));
-  oscil2.setFreq(getOctaveValueToMultiplyForOsc(octaveOsc2, frequence, octave));
+// technical stuff to play put everything in a library
+static void noteOn(int noteToPlay, Configuration conf, int velocity){
+  MIDI.sendNoteOn(noteToPlay + 12*conf.octave, velocity, 1);
+}
+static void noteOff(int noteToShutdown, Configuration conf){
+  MIDI.sendNoteOff(noteToShutdown + 12*conf.octave, 0, 1);
+}
+static void noteMidiDrum(uint8_t index, int velocity){
+  uint8_t note = drum[index]+36;
+  digitalWrite(pinButton[index], HIGH);
+  uint8_t bouton = digitalRead(pinButton[index]);
+  if (bouton == LOW)
+  {
+    // on pousse sur le bouton et sur le soufflet
+    if(oldStatePousser[index] == BUTTON_RELEASED){
+      oldStatePousser[index] = BUTTON_PRESSED;
+      noteOn(note, conf, 127);
+    }
+
+  }else{
+    noteOff(note, conf);
+    oldStatePousser[index] = BUTTON_RELEASED;
+  }
+}
+static void noteMidi(uint8_t sens_soufflet, uint8_t index, Configuration conf, int velocity){
+   //, uint8_t oldStatePousser, uint8_t oldStateTirer
+  // velocity = 127;
+  digitalWrite(pinButton[index], HIGH);
+  uint8_t bouton = digitalRead(pinButton[index]);
+  // digitalWrite(pinButton[index], LOW);
+  uint8_t noteA = pousser[index] + getShift(conf.shiftHalfTone);
+  uint8_t noteB = tirer[index] + getShift(conf.shiftHalfTone);
+  if (pousser[index] != 0 || tirer[index] != 0)
+  {
+    // higher velocity usually makes MIDI instruments louder
+    if (bouton == LOW)
+    {
+      if (sens_soufflet == LOW)
+      {
+        // on pousse sur le bouton et sur le soufflet
+        if (oldStatePousser[index] == BUTTON_RELEASED)
+        {
+          noteOn(noteA, conf, velocity);
+          oldStatePousser[index] = BUTTON_PRESSED;
+          if (oldStateTirer[index] == BUTTON_PRESSED)
+          {
+            noteOff(noteB, conf);
+            oldStateTirer[index] = BUTTON_RELEASED;
+          }
+        }
+      }
+      else
+      { // on tire sur le soufflet et on appuie sur le bouton
+        if (oldStateTirer[index] == 0)
+        {
+
+          noteOn(noteB, conf, velocity);
+          oldStateTirer[index] = BUTTON_PRESSED;
+          if (oldStatePousser[index] == BUTTON_PRESSED)
+          {
+            noteOff(noteA, conf);
+            oldStatePousser[index] = BUTTON_RELEASED;
+          }
+        }
+      }
+    }
+    else
+    {
+      if (oldStatePousser[index] == BUTTON_PRESSED)
+      {
+        noteOff(noteA, conf);
+        oldStatePousser[index] = BUTTON_RELEASED;
+      }
+      if (oldStateTirer[index] == BUTTON_PRESSED)
+      {
+        // on appuie pas sur le bouton ma
+        noteOff(noteB, conf);
+        oldStateTirer[index] = BUTTON_RELEASED;
+      }
+    }
+  }
+
+}
+static void noteMidiBourdon(uint8_t index, Configuration conf, int velocity){
+  //, uint8_t oldStatePousser, uint8_t oldStateTirer
+  // velocity = 127;
+  digitalWrite(pinButton[index], HIGH);
+  uint8_t bouton = digitalRead(pinButton[index]);
+  // digitalWrite(pinButton[index], LOW);
+  uint8_t note = pousser[index]+getShift(conf.shiftHalfTone);
+  if (bouton == LOW)
+  {
+
+    // on pousse sur le bouton et sur le soufflet
+    if(oldStatePousser[index] == BUTTON_RELEASED){
+      oldStatePousser[index] = BUTTON_PRESSED;
+      if(bourdonActif[index] == 1){
+        noteOff(note, conf);
+        bourdonActif[index] = 0;
+      }else{
+        noteOn(note, conf, velocity/2);
+        bourdonActif[index] = 1;
+      }
+    }
+
+  }else{
+    oldStatePousser[index] = BUTTON_RELEASED;
+  }
+}
+static void noteOnSynth(int frequence, Configuration conf){
+  oscil1.setFreq(getOctaveValueToMultiplyForOsc(conf.octaveOsc1, frequence, conf.octave));
+  oscil2.setFreq(getOctaveValueToMultiplyForOsc(conf.octaveOsc2, frequence, conf.octave));
   envelope.noteOn(); // on joue la note
 }
-static void noteOnBourdonSynth(int frequence, int octave){
-  bourdon1.setFreq(getOctaveValueToMultiplyForOsc(octaveBourdon1, frequence, octave));
-  bourdon2.setFreq(getOctaveValueToMultiplyForOsc(octaveBourdon2, frequence, octave));
+static void noteOnBourdonSynth(int frequence, Configuration conf){
+  bourdon1.setFreq(getOctaveValueToMultiplyForOsc(conf.octaveBourdon1, frequence, conf.octave));
+  bourdon2.setFreq(getOctaveValueToMultiplyForOsc(conf.octaveBourdon2, frequence, conf.octave));
   envelopeBourdon.noteOn(); // on joue la note
 }
-static int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave){
+static int noteSynth(uint8_t sens_soufflet, uint8_t index, Configuration conf){
   digitalWrite(pinButton[index], HIGH);
   uint8_t bouton = digitalRead(pinButton[index]);
 
-  int noteSynthA = MatriceNote[pousserSynthNew[index]+getShift(shiftHalfTone)];
-  int noteSynthB = MatriceNote[tirerSynthNew[index]+getShift(shiftHalfTone)];
+  int noteSynthA = MatriceNote[pousserSynthNew[index]+getShift(conf.shiftHalfTone)];
+  int noteSynthB = MatriceNote[tirerSynthNew[index]+getShift(conf.shiftHalfTone)];
 
   if (pousser[index] != 0 || tirer[index] != 0)
   {
@@ -248,7 +257,7 @@ static int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave){
             oldStateTirer[index] = BUTTON_RELEASED;
           }
         }
-        noteOnSynth(noteSynthA, octave);
+        noteOnSynth(noteSynthA, conf);
       }
       else
       { // on tire sur le soufflet et on appuie sur le bouton
@@ -260,7 +269,7 @@ static int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave){
             oldStatePousser[index] = BUTTON_RELEASED;
           }
         }
-        noteOnSynth(noteSynthB, octave);
+        noteOnSynth(noteSynthB, conf);
       }
       return 1;
     }
@@ -280,11 +289,11 @@ static int noteSynth(uint8_t sens_soufflet, uint8_t index, int octave){
   }
   return 0;
 }
-static int noteSynthBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave){
+static int noteSynthBourdon(uint8_t sens_soufflet, uint8_t index, Configuration conf){
   //, uint8_t oldStatePousser, uint8_t oldStateTirer
   digitalWrite(pinButton[index], HIGH);
   uint8_t bouton = digitalRead(pinButton[index]);
-  uint8_t noteA = MatriceNote[pousserSynthNew[index]+getShift(shiftHalfTone)];
+  uint8_t noteA = MatriceNote[pousserSynthNew[index]+getShift(conf.shiftHalfTone)];
   // On
   if (bouton == LOW)
   {
@@ -293,7 +302,7 @@ static int noteSynthBourdon(uint8_t sens_soufflet, uint8_t index, uint8_t octave
         // le bourdon n'etait pas en jeu
       if(bourdonActif[index] == 0){
 
-        noteOnBourdonSynth(noteA, octave);
+        noteOnBourdonSynth(noteA, conf);
         for(int index=0; index<36; index++){
           bourdonActif[index] = 0;
         }
@@ -321,6 +330,8 @@ static void bourdonSetup(){
   envelopeBourdon.setTimes(0,0,0,0);
   envelopeBourdon.noteOn();
 }
+
+// Menu selection and setup the play
 void updateControl(){
   byte attack_level = attackTheme;
   byte decay_level = 255;
@@ -342,9 +353,9 @@ void updateControl(){
   for (int i = 0; i < 36; i++)
   {
     if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
-      onOffBourdon += noteSynthBourdon(pousserTirerState, i, octave);
+      onOffBourdon += noteSynthBourdon(pousserTirerState, i, conf);
     }else{
-      onOffSynth += noteSynth(pousserTirerState, i, octave);
+      onOffSynth += noteSynth(pousserTirerState, i, conf);
     }
   }
   if(onOffSynth == 0){
@@ -359,30 +370,13 @@ int updateAudio(){
   long noteBourdon =  (long)envelopeBourdon.next() * (bourdon1.next()+bourdon2.next());
   return (note + noteBourdon) >>9;
 }
-static void setOscOct(int osc, int value){
-
-  if(osc == 1){
-    octaveOsc1 = value;
-  }else if(osc == 2){
-    octaveOsc2 = value;
-  }else if(osc == 3){
-    octaveBourdon1 = value;
-  }else if(osc == 4){
-    octaveBourdon2 = value;
-  }else if(osc == 5){
-    octaveOsc1 = value;
-    octaveOsc2 = value;
-    octaveBourdon1 = value;
-    octaveBourdon2 = value;
-  }
-}
 
 static void maindisplay(byte newPos, int menuActiveItem){
   oled.clear();
   if(menuActiveItem==OCTAVE){
-    oled = displayOctave(octave, newPos, oled);
+    oled = displayOctave(conf.octave, newPos, oled);
   }else if(menuActiveItem==HALFTONE){
-    oled = displayHalfTone(shiftHalfTone, newPos, oled);
+    oled = displayHalfTone(conf.shiftHalfTone, newPos, oled);
   }else if(menuActiveItem == ATTACK_MAIN){
     oled = displayAttackSwitch(attackTheme, newPos, oled);
   }else if(menuActiveItem == ATTACK_DRONE){
@@ -390,7 +384,7 @@ static void maindisplay(byte newPos, int menuActiveItem){
   }else if(menuActiveItem == PRESETS){
     oled = displayPresetsMenu(newPos, oled);
   }else if(menuActiveItem == CHOOSE_OCTAVE){
-    oled = printOctaveMenu(newPos,octaveOsc1, octaveOsc2, octaveBourdon1, octaveBourdon2, oled);
+    oled = printOctaveMenu(newPos,conf.octaveOsc1, conf.octaveOsc2, conf.octaveBourdon1, conf.octaveBourdon2, oled);
   }else if(menuActiveItem == MAIN){
     oled = displayMainMenu(mode, newPos, oled);
   }else if(menuActiveItem == MIDI_SETTINGS){
@@ -434,8 +428,6 @@ static void maindisplay(byte newPos, int menuActiveItem){
     oled = displayOscillatorChoice(newPos, activeOsc1, activeOsc2, activeBrd1, activeBrd2, oled);
   }
 }
-
-
 static const int8_t* getWaveFromInt(int i){
   if(i==1){
     return(SIN2048_DATA);
@@ -448,31 +440,14 @@ static const int8_t* getWaveFromInt(int i){
   }else{
     return(SQUARE_NO_ALIAS_2048_DATA);
   }
-
 }
-
 static void setPresets(int i){
   oled.print(i);
-  octave = presets[i][0];
-  shiftHalfTone = presets[i][1];
-
-  octaveOsc1 =  presets[i][2];
-  octaveOsc2 =  presets[i][3];
-  octaveBourdon1 =  presets[i][4];
-  octaveBourdon2 =  presets[i][5];
-
-  oscil1.setTable(getWaveFromInt(presets[i][6]));
-  activeOsc1 = presets[i][6];
-
-  oscil2.setTable(getWaveFromInt(presets[i][7]));
-  activeOsc2 = presets[i][7];
-
-  bourdon1.setTable(getWaveFromInt(presets[i][8]));
-  activeBrd1 = presets[i][8];
-
-  bourdon2.setTable(getWaveFromInt(presets[i][9]));
-  activeBrd2 = presets[i][9];
-
+  conf = newPresets[i];
+  oscil1.setTable(getWaveFromInt(conf.getOsc1()));
+  oscil2.setTable(getWaveFromInt(conf.getOsc2()));
+  bourdon1.setTable(getWaveFromInt(conf.getBrd1()));
+  bourdon2.setTable(getWaveFromInt(conf.getBrd2()));
 }
 static int menuSelectorSwitch(int newPos, int menuActiveItem){
 
@@ -585,7 +560,7 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     encoder.setPosition(0);
   }else if(menuActiveItem==CHOOSE_OCTAVE){
       int newOctave = (newPos%6)-3;
-      setOscOct(wichOsc, newOctave);
+      conf.setOscOct(wichOsc, newOctave);
       encoder.setPosition(wichOsc-1);
       menuActiveItem = OCT_OSC;
 
