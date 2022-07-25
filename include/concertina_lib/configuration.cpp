@@ -5,28 +5,28 @@
 Configuration::Configuration(
   String s,
   int o,
-  int shiftHalfTone,
-  int octaveOsc1,
-  int octaveOsc2,
-  int octaveBourdon1,
-  int octaveBourdon2,
-  int activeOsc1,
-  int activeOsc2,
-  int activeBrd1,
-  int activeBrd2
+  int shift,
+  int oct1,
+  int oct2,
+  int oct3,
+  int oct4,
+  int osc1,
+  int osc2,
+  int brd1,
+  int brd2
 )
 {
   presetName = s;
   octave = o;
-  shiftHalfTone = shiftHalfTone;
-  octaveOsc1 = octaveOsc1;
-  octaveOsc2 = octaveOsc2;
-  octaveBourdon1 = octaveBourdon1;
-  octaveBourdon2 = octaveBourdon2;
-  activeOsc1 = activeOsc1;
-  activeOsc2 = activeOsc2;
-  activeBrd1 = activeBrd1;
-  activeBrd2 = activeBrd2;
+  shiftHalfTone = shift;
+  octaveOsc1 = oct1;
+  octaveOsc2 = oct2;
+  octaveBourdon1 = oct3;
+  octaveBourdon2 = oct4;
+  activeOsc1 = osc1;
+  activeOsc2 = osc2;
+  activeBrd1 = brd1;
+  activeBrd2 = brd2;
 }
 String Configuration::getName(){
   return presetName;

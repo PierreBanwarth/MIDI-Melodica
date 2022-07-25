@@ -27,17 +27,17 @@ class Configuration {       // The class
     void setAllOsc(int a);
 
     Configuration(
-      String presetName,
-      int octave,
-      int shiftHalfTone,
-      int octaveOsc1,
-      int octaveOsc2,
-      int octaveBourdon1,
-      int octaveBourdon2,
-      int activeOsc1,
-      int activeOsc2,
-      int activeBrd1,
-      int activeBrd2
+      String s,
+      int o,
+      int shift,
+      int oct1,
+      int oct2,
+      int oct3,
+      int oct4,
+      int osc1,
+      int osc2,
+      int brd1,
+      int brd2
     );
 
 };

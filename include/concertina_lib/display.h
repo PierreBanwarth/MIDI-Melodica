@@ -38,7 +38,7 @@
   );
 
   const char *keyNames[23] = {
-    "Sol#/Do#",
+    "Sol#/Do#",//0
     "La/Re",
     "Sib/Re#",
     "Si/Mi",
