@@ -3,6 +3,7 @@
 
 #include "display.h"
 #include "concertina_lib/concertina.h"
+#include "concertina_lib/configuration.h"
 
 extern void displayShift(int i, SSD1306AsciiWire oled){
   oled.print(keyNames[i]);
@@ -25,40 +26,40 @@ extern SSD1306AsciiWire displayAttack(int attackTheme, int attackBourdon, SSD130
   return oled;
 }
 
-extern SSD1306AsciiWire printOscWave(int activeOsc1, int activeOsc2, int activeBrd1, int activeBrd2, SSD1306AsciiWire oled){
-  displayOsc(activeOsc1, oled);
+extern SSD1306AsciiWire printOscWave(Configuration conf, SSD1306AsciiWire oled){
+  displayOsc(conf.activeOsc1, oled);
   oled.print(" ");
-  displayOsc(activeOsc2, oled);
+  displayOsc(conf.activeOsc2, oled);
   oled.print(" ");
-  displayOsc(activeBrd1, oled);
+  displayOsc(conf.activeBrd1, oled);
   oled.print(" ");
-  displayOsc(activeBrd2, oled);
+  displayOsc(conf.activeBrd2, oled);
   oled.println("");
   return oled;
 }
-extern SSD1306AsciiWire printOscOct(int octaveOsc1, int octaveOsc2, int octaveBourdon1, int octaveBourdon2, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire printOscOct(Configuration conf, SSD1306AsciiWire oled){
   oled.print("Oct: ");
-  oled.print(octaveOsc1);
+  oled.print(conf.octaveOsc1);
   oled.print("   ");
-  oled.print(octaveOsc2);
+  oled.print(conf.octaveOsc2);
   oled.print("   ");
-  oled.print(octaveBourdon1);
+  oled.print(conf.octaveBourdon1);
   oled.print("  ");
-  oled.print(octaveBourdon2);
+  oled.print(conf.octaveBourdon2);
   oled.println("");
   return oled;
 }
-extern SSD1306AsciiWire displayOctave(int octave, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayOctave(Configuration conf, int newPos, SSD1306AsciiWire oled){
   oled.print("Octave : ");
-  oled.println(octave);
+  oled.println(conf.octave);
   oled.print("Oct : ");
   oled.println((newPos)%6);
   oled.print(" ");
   return oled;
 }
-extern SSD1306AsciiWire displayHalfTone(int shiftHalfTone, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayHalfTone(Configuration conf, int newPos, SSD1306AsciiWire oled){
   oled.print("Actual ");
-  displayShift(shiftHalfTone, oled);
+  displayShift(conf.shiftHalfTone, oled);
   oled.println("");
   oled.print("New : ");
   displayShift(newPos, oled);
@@ -77,7 +78,7 @@ extern SSD1306AsciiWire displayAttackSwitch(int attack, int newPos, SSD1306Ascii
 extern SSD1306AsciiWire displayPresetsMenu(int newPos, SSD1306AsciiWire oled){
   for(int i=0; i<7; i++){
     oled.print(" ");
-    oled.println(presetsNames[i]);
+    oled.println(newPresets[i].getName());
   }
   oled.println("  Back");
   oled.setCursor(0, (newPos%8));
@@ -149,38 +150,29 @@ extern SSD1306AsciiWire displaySynthSettingsFirstMenu(int newPos, SSD1306AsciiWi
 }
 
 extern SSD1306AsciiWire displayState(
-  int octave,
-  int shiftHalfTone,
+  Configuration conf,
   int attackTheme,
   int attackBourdon,
-  int activeOsc1,
-  int activeOsc2,
-  int activeBrd1,
-  int activeBrd2,
-  int octaveOsc1,
-  int octaveOsc2,
-  int octaveBourdon1,
-  int octaveBourdon2,
   SSD1306AsciiWire oled
 ){
   oled = displayMainTitle(oled);
   oled.print("Oct: ");
-  oled.print(octave);
+  oled.print(conf.octave);
   oled.print(" ");
-  displayShift(shiftHalfTone, oled);
+  displayShift(conf.shiftHalfTone, oled);
   oled.println("");
 
   oled = displayAttack(attackTheme, attackBourdon, oled);
   oled.println("  -------------------");
   oled.println("  Osc1 Osc2 Brd1 Brd2");
-  oled = printOscOct(octaveOsc1, octaveOsc2, octaveBourdon1, octaveBourdon2, oled);
-  oled = printOscWave(activeOsc1, activeOsc2, activeBrd1, activeBrd2, oled);
+  oled = printOscOct(conf, oled);
+  oled = printOscWave(conf, oled);
   return oled;
 
 }
-SSD1306AsciiWire displayOscillatorChoice(int newPos, int activeOsc1, int activeOsc2, int activeBrd1, int activeBrd2, SSD1306AsciiWire oled){
+SSD1306AsciiWire displayOscillatorChoice(int newPos, Configuration conf, SSD1306AsciiWire oled){
   oled.println("Wave Form :");
-  oled = printOscWave(activeOsc1, activeOsc2, activeBrd1, activeBrd2, oled);
+  oled = printOscWave(conf, oled);
   oled.println("  Sin");
   oled.println("  Cos");
   oled.println("  Tri");
@@ -196,22 +188,15 @@ SSD1306AsciiWire displayOscillatorChoice(int newPos, int activeOsc1, int activeO
 SSD1306AsciiWire displayOctOrWave(
   int menuActiveItem,
   int newPos,
-  int octaveOsc1,
-  int octaveOsc2,
-  int octaveBourdon1,
-  int octaveBourdon2,
-  int activeOsc1,
-  int activeOsc2,
-  int activeBrd1,
-  int activeBrd2,
+  Configuration conf,
   SSD1306AsciiWire oled
 ){
   if(menuActiveItem == OCT_OSC){
     oled.println("Oct osc :");
-    oled = printOscOct(octaveOsc1, octaveOsc2, octaveBourdon1, octaveBourdon2, oled);
+    oled = printOscOct(conf, oled);
   }else{
     oled.println("Wave :");
-    oled = printOscWave(activeOsc1, activeOsc2, activeBrd1, activeBrd2, oled);
+    oled = printOscWave(conf, oled);
   }
   oled.println("  Osc1 ");
   oled.println("  Osc2 ");
@@ -227,8 +212,8 @@ SSD1306AsciiWire displayOctOrWave(
 
 
 }
-SSD1306AsciiWire printOctaveMenu(int newPos, int octaveOsc1, int octaveOsc2, int octaveBourdon1, int octaveBourdon2, SSD1306AsciiWire oled){
-  oled = printOscOct(octaveOsc1, octaveOsc2, octaveBourdon1, octaveBourdon2, oled);
+SSD1306AsciiWire printOctaveMenu(int newPos, Configuration conf, SSD1306AsciiWire oled){
+  oled = printOscOct(conf, oled);
   oled.println("");
   oled.print(newPos%6 -3);
   oled.print(" ");

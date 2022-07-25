@@ -330,7 +330,6 @@ static void bourdonSetup(){
   envelopeBourdon.setTimes(0,0,0,0);
   envelopeBourdon.noteOn();
 }
-
 // Menu selection and setup the play
 void updateControl(){
   byte attack_level = attackTheme;
@@ -374,9 +373,9 @@ int updateAudio(){
 static void maindisplay(byte newPos, int menuActiveItem){
   oled.clear();
   if(menuActiveItem==OCTAVE){
-    oled = displayOctave(conf.octave, newPos, oled);
+    oled = displayOctave(conf, newPos, oled);
   }else if(menuActiveItem==HALFTONE){
-    oled = displayHalfTone(conf.shiftHalfTone, newPos, oled);
+    oled = displayHalfTone(conf, newPos, oled);
   }else if(menuActiveItem == ATTACK_MAIN){
     oled = displayAttackSwitch(attackTheme, newPos, oled);
   }else if(menuActiveItem == ATTACK_DRONE){
@@ -384,7 +383,7 @@ static void maindisplay(byte newPos, int menuActiveItem){
   }else if(menuActiveItem == PRESETS){
     oled = displayPresetsMenu(newPos, oled);
   }else if(menuActiveItem == CHOOSE_OCTAVE){
-    oled = printOctaveMenu(newPos,conf.octaveOsc1, conf.octaveOsc2, conf.octaveBourdon1, conf.octaveBourdon2, oled);
+    oled = printOctaveMenu(newPos,conf, oled);
   }else if(menuActiveItem == MAIN){
     oled = displayMainMenu(mode, newPos, oled);
   }else if(menuActiveItem == MIDI_SETTINGS){
@@ -393,18 +392,9 @@ static void maindisplay(byte newPos, int menuActiveItem){
     oled = displaySynthSettingsFirstMenu(newPos, oled);
   }else if(menuActiveItem == DISPLAY_STATE){
     oled = displayState(
-      octave,
-      shiftHalfTone,
+      conf,
       attackTheme,
       attackBourdon,
-      activeOsc1,
-      activeOsc2,
-      activeBrd1,
-      activeBrd2,
-      octaveOsc1,
-      octaveOsc2,
-      octaveBourdon1,
-      octaveBourdon2,
       oled
     );
   }
@@ -414,18 +404,11 @@ static void maindisplay(byte newPos, int menuActiveItem){
     oled = displayOctOrWave(
       menuActiveItem,
       newPos,
-      octaveOsc1,
-      octaveOsc2,
-      octaveBourdon1,
-      octaveBourdon2,
-      activeOsc1,
-      activeOsc2,
-      activeBrd1,
-      activeBrd2,
+      conf,
       oled
     );
   }else if (menuActiveItem == OSCILLATOR){
-    oled = displayOscillatorChoice(newPos, activeOsc1, activeOsc2, activeBrd1, activeBrd2, oled);
+    oled = displayOscillatorChoice(newPos, conf, oled);
   }
 }
 static const int8_t* getWaveFromInt(int i){
@@ -452,12 +435,12 @@ static void setPresets(int i){
 static int menuSelectorSwitch(int newPos, int menuActiveItem){
 
   if(menuActiveItem==OCTAVE){
-    octave = (newPos)%6;
+    conf.octave = (newPos)%6;
     menuActiveItem = MAIN;
     encoder.setPosition(1);
 
   }else if(menuActiveItem==HALFTONE){
-    shiftHalfTone = (newPos%23);
+    conf.shiftHalfTone = (newPos%23);
     menuActiveItem = MAIN;
     encoder.setPosition(2);
 
@@ -498,11 +481,11 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }
     else if(newPos%6 == 1){
       menuActiveItem = OCTAVE;
-      encoder.setPosition(octave);
+      encoder.setPosition(conf.octave);
     }
     else if(newPos%6 == 2){
       menuActiveItem = HALFTONE;
-      encoder.setPosition(shiftHalfTone);
+      encoder.setPosition(conf.shiftHalfTone);
     }
     else if(newPos%6 == 3){
       if(mode == MODE_MIDI){
@@ -587,22 +570,22 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     if(newPos%6 == 0){
       if(oscillator == 1){
         oscil1.setTable(SIN2048_DATA);
-        activeOsc1 = 0;
+        conf.activeOsc1 = 0;
 
       }else if(oscillator == 2){
         oscil2.setTable(SIN2048_DATA);
-        activeOsc2 = 0;
+        conf.activeOsc2 = 0;
 
       }else if(oscillator == 3){
         bourdon1.setTable(SIN2048_DATA);
-        activeBrd1 = 0;
+        conf.activeBrd1 = 0;
 
       }else if (oscillator == 4){
         bourdon2.setTable(SIN2048_DATA);
-        activeBrd2 = 0;
+        conf.activeBrd2 = 0;
 
       }else if (oscillator == 5){
-        activeOsc1 = 0;activeOsc2 = 0;activeBrd1 = 0;activeBrd2 = 0;
+        conf.setAllOsc(0);
         oscil1.setTable(SIN2048_DATA);
         oscil2.setTable(SIN2048_DATA);
         bourdon1.setTable(SIN2048_DATA);
@@ -611,19 +594,18 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 1){
       if (oscillator == 1){
         oscil1.setTable(COS2048_DATA);
-        activeOsc1 = 1;
+        conf.activeOsc1 = 1;
       }else if (oscillator == 2){
         oscil2.setTable(COS2048_DATA);
-        activeOsc2 = 1;
+        conf.activeOsc2 = 1;
       }else if(oscillator == 3){
         bourdon1.setTable(COS2048_DATA);
-        activeBrd1 = 1;
+        conf.activeBrd1 = 1;
       }else if (oscillator == 4){
         bourdon2.setTable(COS2048_DATA);
-        activeBrd2 = 1;
+        conf.activeBrd2 = 1;
       }else if (oscillator == 5){
-        activeOsc1 = 1;activeOsc2 = 1;activeBrd1 = 1;activeBrd2 = 1;
-
+        conf.setAllOsc(1);
         oscil1.setTable(COS2048_DATA);
         oscil2.setTable(COS2048_DATA);
         bourdon1.setTable(COS2048_DATA);
@@ -632,22 +614,18 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 2){
       if (oscillator == 1){
         oscil1.setTable(TRIANGLE2048_DATA);
-        activeOsc1 = 2;
+        conf.activeOsc1 = 2;
       }else if (oscillator == 2){
         oscil2.setTable(TRIANGLE2048_DATA);
-        activeOsc2 = 2;
+        conf.activeOsc2 = 2;
       }else if(oscillator == 3){
         bourdon1.setTable(TRIANGLE2048_DATA);
-        activeBrd1 = 2;
+        conf.activeBrd1 = 2;
       }else if (oscillator == 4){
         bourdon2.setTable(TRIANGLE2048_DATA);
-        activeBrd2 = 2;
+        conf.activeBrd2 = 2;
       }else if (oscillator == 5){
-        activeOsc1 = 2;
-        activeOsc2 = 2;
-        activeBrd1 = 2;
-        activeBrd2 = 2;
-
+        conf.setAllOsc(2);
         oscil1.setTable(TRIANGLE2048_DATA);
         oscil2.setTable(TRIANGLE2048_DATA);
         bourdon1.setTable(TRIANGLE2048_DATA);
@@ -656,18 +634,19 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 3){
       if (oscillator == 1){
         oscil1.setTable(SAW2048_DATA);
-        activeOsc1 = 3;
+        conf.activeOsc1 = 3;
       }else if (oscillator == 2){
-        activeOsc2 = 3;
+        conf.activeOsc2 = 3;
         oscil2.setTable(SAW2048_DATA);
       }else if(oscillator == 3){
-        activeBrd1 = 3;
+        conf.activeBrd1 = 3;
         bourdon1.setTable(SAW2048_DATA);
       }else if (oscillator == 4){
-        activeBrd2 = 3;
+        conf.activeBrd2 = 3;
         bourdon2.setTable(SAW2048_DATA);
       }else if (oscillator == 5){
-        activeOsc1 = 3;activeOsc2 = 3;activeBrd1 = 3;activeBrd2 = 3;
+        conf.setAllOsc(3);
+
         oscil1.setTable(SAW2048_DATA);
         oscil2.setTable(SAW2048_DATA);
         bourdon1.setTable(SAW2048_DATA);
@@ -676,21 +655,21 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
     }else if(newPos%6 == 4){
       if (oscillator == 1)        {
         oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeOsc1=4;
+        conf.activeOsc1=4;
       }else if (oscillator == 2){
         oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeOsc2=4;
+        conf.activeOsc2=4;
 
       }else if(oscillator == 3){
         bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeBrd1=4;
+        conf.activeBrd1=4;
 
       }else if (oscillator == 4){
         bourdon2.setTable(SQUARE_NO_ALIAS_2048_DATA);
-        activeBrd2=4;
+        conf.activeBrd2=4;
 
       }else if (oscillator == 5){
-        activeOsc1=4;activeOsc2=4;activeBrd1=4;activeBrd2=4;
+        conf.setAllOsc(4);
         oscil1.setTable(SQUARE_NO_ALIAS_2048_DATA);
         oscil2.setTable(SQUARE_NO_ALIAS_2048_DATA);
         bourdon1.setTable(SQUARE_NO_ALIAS_2048_DATA);
@@ -762,9 +741,9 @@ void loop() {
       }else{
         pousserTirerState = digitalRead(pousserTirer);
         if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
-          noteMidiBourdon(i, octave, 127);
+          noteMidiBourdon(i, conf, 127);
         }else{
-          noteMidi(pousserTirerState, i, octave, 127);
+          noteMidi(pousserTirerState, i, conf, 127);
         }
       }
     }

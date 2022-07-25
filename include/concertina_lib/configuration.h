@@ -15,14 +15,17 @@ class Configuration {       // The class
     int activeOsc2;
     int activeBrd1;
     int activeBrd2;
-    String name;
+    String presetName;
     int getOsc1();
     int getOsc2();
     int getBrd1();
     int getBrd2();
+    String getName();
     void setOscOct(int wich, int value);
     void setActiveOsc(int a, int b, int c, int d);
     void setOctaveOsc(int a, int b, int c, int d);
+    void setAllOsc(int a);
+
     Configuration(
       String presetName,
       int octave,

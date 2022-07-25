@@ -3,8 +3,8 @@
 
 
 Configuration::Configuration(
-  String presetName,
-  int octave,
+  String s,
+  int o,
   int shiftHalfTone,
   int octaveOsc1,
   int octaveOsc2,
@@ -16,8 +16,8 @@ Configuration::Configuration(
   int activeBrd2
 )
 {
-  presetName = presetName;
-  octave = octave;
+  presetName = s;
+  octave = o;
   shiftHalfTone = shiftHalfTone;
   octaveOsc1 = octaveOsc1;
   octaveOsc2 = octaveOsc2;
@@ -28,7 +28,9 @@ Configuration::Configuration(
   activeBrd1 = activeBrd1;
   activeBrd2 = activeBrd2;
 }
-
+String Configuration::getName(){
+  return presetName;
+}
 void Configuration::setOctaveOsc(int a, int b, int c, int d){
   octaveOsc1 = a;
   octaveOsc2 = b;
@@ -66,4 +68,12 @@ void Configuration::setActiveOsc(int a, int b, int c, int d){
   activeOsc2 = a;
   activeBrd1 = c;
   activeBrd2 = d;
+}
+
+void Configuration::setAllOsc(int i){
+  activeOsc1 = i;
+  activeOsc2 = i;
+  activeBrd1 = i;
+  activeBrd2 = i;
+
 }

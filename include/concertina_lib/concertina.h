@@ -37,11 +37,12 @@ enum waveform { SIN = 1, COS = 2, TRI = 3, SAW = 4, SQUARE = 5};
 const Configuration newPresets[] = {
   Configuration("Bass", 4,11, -1,-2,-2,-3, 0,4,2,0),
   Configuration("Squ Tri",1,11, -3 ,-2 ,-2,-3 ,4,4,2,0),
-  Configuration("Acid", 1,0, 3,1 ,3,1 ,3,1 ,3,1),
-  Configuration("Test",1,0,  4,1 ,4,1 ,4,1 ,4,1),
-  Configuration("Test",1,0,  1,2 ,1,3 ,1,4 ,1,5),
-  Configuration("Test",1,6, 1,1 ,1,1 ,1,1 ,1,1),
-  Configuration("Test",1,12, 1,1 ,1,1 ,1,1 ,1,1)
+  Configuration("Squ Tri",1,11, -3 ,-2 ,-2,-3 ,4,4,2,0),
+  Configuration("Squ Tri",1,11, -3 ,-2 ,-2,-3 ,4,4,2,0),
+  Configuration("Squ Tri",1,11, -3 ,-2 ,-2,-3 ,4,4,2,0),
+  Configuration("Squ Tri",1,11, -3 ,-2 ,-2,-3 ,4,4,2,0),
+  Configuration("Squ Tri",1,11, -3 ,-2 ,-2,-3 ,4,4,2,0)
+
 };
 
 // const char *presetsNames[7] = {
