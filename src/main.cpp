@@ -53,21 +53,7 @@ int encoderPosition ;
 byte oldStatePousserTirer = 0;
 int indexMenu = 0;
 
-
-
 Configuration conf = Configuration("Defaut", 4, 11, 0,-1,-2,-3, 0,0,0,0);
-
-// byte octave = 4;
-// int octaveOsc1 = 0;
-// int octaveOsc2 = -1;
-// int octaveBourdon1 = -2;
-// int octaveBourdon2 = -3;
-// int8_t shiftHalfTone = 11;
-// byte activeOsc1 = 0;
-// byte activeOsc2 = 0;
-// byte activeBrd1 = 0;
-// byte activeBrd2 = 0;
-
 
 byte attackTheme = 200;
 byte attackBourdon = 200;

@@ -5,11 +5,11 @@
 #include "concertina_lib/concertina.h"
 #include "concertina_lib/configuration.h"
 
-extern void displayShift(int i, SSD1306AsciiWire oled){
+extern void displayShift(uint8_t  i, SSD1306AsciiWire oled){
   oled.print(keyNames[i]);
 }
 
-extern void displayOsc(int i, SSD1306AsciiWire oled){
+extern void displayOsc(uint8_t i, SSD1306AsciiWire oled){
   oled.print(waveFormNames[i]);
 }
 
@@ -18,7 +18,7 @@ extern SSD1306AsciiWire displayMainTitle(SSD1306AsciiWire oled){
   oled.println("V 1.0.0.0");
   return oled;
 }
-extern SSD1306AsciiWire displayAttack(int attackTheme, int attackBourdon, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayAttack(uint8_t  attackTheme, uint8_t  attackBourdon, SSD1306AsciiWire oled){
   oled.print("VOsc: ");
   oled.print(attackTheme);
   oled.print(" VBrd: ");
@@ -49,7 +49,7 @@ extern SSD1306AsciiWire printOscOct(Configuration conf, SSD1306AsciiWire oled){
   oled.println("");
   return oled;
 }
-extern SSD1306AsciiWire displayOctave(Configuration conf, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayOctave(Configuration conf, uint8_t newPos, SSD1306AsciiWire oled){
   oled.print("Octave : ");
   oled.println(conf.octave);
   oled.print("Oct : ");
@@ -57,7 +57,7 @@ extern SSD1306AsciiWire displayOctave(Configuration conf, int newPos, SSD1306Asc
   oled.print(" ");
   return oled;
 }
-extern SSD1306AsciiWire displayHalfTone(Configuration conf, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayHalfTone(Configuration conf, uint8_t  newPos, SSD1306AsciiWire oled){
   oled.print("Actual ");
   displayShift(conf.shiftHalfTone, oled);
   oled.println("");
@@ -66,7 +66,7 @@ extern SSD1306AsciiWire displayHalfTone(Configuration conf, int newPos, SSD1306A
   oled.print(" ");
   return oled;
 }
-extern SSD1306AsciiWire displayAttackSwitch(int attack, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayAttackSwitch(uint8_t attack, uint8_t newPos, SSD1306AsciiWire oled){
   oled.print("Volume Main : ");
   oled.println(attack);
   oled.println(" ");
@@ -75,7 +75,7 @@ extern SSD1306AsciiWire displayAttackSwitch(int attack, int newPos, SSD1306Ascii
   oled.print(" ");
   return oled;
 }
-extern SSD1306AsciiWire displayPresetsMenu(int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayPresetsMenu(uint8_t newPos, SSD1306AsciiWire oled){
   for(int i=0; i<7; i++){
     oled.print(" ");
     oled.println(newPresets[i].getName());
@@ -86,7 +86,7 @@ extern SSD1306AsciiWire displayPresetsMenu(int newPos, SSD1306AsciiWire oled){
   return oled;
 }
 
-extern SSD1306AsciiWire displayMainMenu(int mode, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayMainMenu(uint8_t mode, uint8_t newPos, SSD1306AsciiWire oled){
   oled = displayMainTitle(oled);
   oled.print("  Mode : ");
   if(mode == MODE_MIDI){
@@ -110,7 +110,7 @@ extern SSD1306AsciiWire displayMainMenu(int mode, int newPos, SSD1306AsciiWire o
   oled.print(">");
   return oled;
 }
-extern SSD1306AsciiWire displayMidiSettings(int mode_midi, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayMidiSettings(uint8_t mode_midi, uint8_t newPos, SSD1306AsciiWire oled){
 
   oled.println("MIDI settings");
   oled.println(" ");
@@ -126,7 +126,7 @@ extern SSD1306AsciiWire displayMidiSettings(int mode_midi, int newPos, SSD1306As
   return oled;
 
 }
-extern SSD1306AsciiWire displayMenuAttack(int attackMain, int attackBourdon, int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displayMenuAttack(uint8_t attackMain, uint8_t attackBourdon, uint8_t newPos, SSD1306AsciiWire oled){
   oled.println("Volume :");
   oled = displayAttack(attackMain, attackBourdon, oled);
   oled.println("  Theme");
@@ -137,7 +137,7 @@ extern SSD1306AsciiWire displayMenuAttack(int attackMain, int attackBourdon, int
   return oled;
 
 }
-extern SSD1306AsciiWire displaySynthSettingsFirstMenu(int newPos, SSD1306AsciiWire oled){
+extern SSD1306AsciiWire displaySynthSettingsFirstMenu(uint8_t newPos, SSD1306AsciiWire oled){
   oled.println("Synth");
   oled.println("");
   oled.println("  Waveform");
@@ -151,8 +151,8 @@ extern SSD1306AsciiWire displaySynthSettingsFirstMenu(int newPos, SSD1306AsciiWi
 
 extern SSD1306AsciiWire displayState(
   Configuration conf,
-  int attackTheme,
-  int attackBourdon,
+  uint8_t attackTheme,
+  uint8_t attackBourdon,
   SSD1306AsciiWire oled
 ){
   oled = displayMainTitle(oled);
@@ -170,7 +170,7 @@ extern SSD1306AsciiWire displayState(
   return oled;
 
 }
-SSD1306AsciiWire displayOscillatorChoice(int newPos, Configuration conf, SSD1306AsciiWire oled){
+SSD1306AsciiWire displayOscillatorChoice(uint8_t newPos, Configuration conf, SSD1306AsciiWire oled){
   oled.println("Wave Form :");
   oled = printOscWave(conf, oled);
   oled.println("  Sin");
@@ -186,8 +186,8 @@ SSD1306AsciiWire displayOscillatorChoice(int newPos, Configuration conf, SSD1306
 
 
 SSD1306AsciiWire displayOctOrWave(
-  int menuActiveItem,
-  int newPos,
+  uint8_t menuActiveItem,
+  uint8_t newPos,
   Configuration conf,
   SSD1306AsciiWire oled
 ){
@@ -212,7 +212,7 @@ SSD1306AsciiWire displayOctOrWave(
 
 
 }
-SSD1306AsciiWire printOctaveMenu(int newPos, Configuration conf, SSD1306AsciiWire oled){
+SSD1306AsciiWire printOctaveMenu(uint8_t newPos, Configuration conf, SSD1306AsciiWire oled){
   oled = printOscOct(conf, oled);
   oled.println("");
   oled.print(newPos%6 -3);

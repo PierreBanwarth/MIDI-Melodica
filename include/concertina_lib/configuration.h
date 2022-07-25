@@ -5,39 +5,39 @@
 
 class Configuration {       // The class
   public:             // Access specifier
-    int octave;
-    int shiftHalfTone;
-    int octaveOsc1;
-    int octaveOsc2;
-    int octaveBourdon1;
-    int octaveBourdon2;
-    int activeOsc1;
-    int activeOsc2;
-    int activeBrd1;
-    int activeBrd2;
+    uint8_t octave;
+    uint8_t shiftHalfTone;
+    uint8_t octaveOsc1;
+    uint8_t octaveOsc2;
+    uint8_t octaveBourdon1;
+    uint8_t octaveBourdon2;
+    uint8_t activeOsc1;
+    uint8_t activeOsc2;
+    uint8_t activeBrd1;
+    uint8_t activeBrd2;
     String presetName;
-    int getOsc1();
-    int getOsc2();
-    int getBrd1();
-    int getBrd2();
+    uint8_t getOsc1();
+    uint8_t getOsc2();
+    uint8_t getBrd1();
+    uint8_t getBrd2();
     String getName();
-    void setOscOct(int wich, int value);
-    void setActiveOsc(int a, int b, int c, int d);
-    void setOctaveOsc(int a, int b, int c, int d);
-    void setAllOsc(int a);
+    void setOscOct(uint8_t wich, uint8_t value);
+    void setActiveOsc(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
+    void setOctaveOsc(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
+    void setAllOsc(uint8_t a);
 
     Configuration(
       String s,
-      int o,
-      int shift,
-      int oct1,
-      int oct2,
-      int oct3,
-      int oct4,
-      int osc1,
-      int osc2,
-      int brd1,
-      int brd2
+      uint8_t o,
+      uint8_t shift,
+      uint8_t oct1,
+      uint8_t oct2,
+      uint8_t oct3,
+      uint8_t oct4,
+      uint8_t osc1,
+      uint8_t osc2,
+      uint8_t brd1,
+      uint8_t brd2
     );
 
 };
