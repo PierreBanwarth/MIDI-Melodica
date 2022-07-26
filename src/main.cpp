@@ -11,6 +11,8 @@
 #include "concertina_lib/display.cpp"
 #include "concertina_lib/configuration.cpp"
 #include "concertina_lib/configuration.h"
+#include "concertina_lib/musicMath.h"
+#include "concertina_lib/musicMath.cpp"
 
 #include <MozziGuts.h>
 #include <Oscil.h>
@@ -68,36 +70,8 @@ byte mode_midi = DRUM;
 int oscillator = 0;
 
 
-static int getShift(int i){
-  // 0 -> 0
-  return (i%23)-11;
-}
-static int getOctaveValueToMultiplyForOsc(int osc, int frequence, int octaveValue){
-  int freq = frequence;
-  int finalOctave = osc+octaveValue;
-  if(finalOctave == -3){
-    freq = frequence>>1;
-  }else if(finalOctave == -2){
-    freq = frequence>>1;
-  }else if(finalOctave == -1){
-    freq = frequence>>1;
-  }else if(finalOctave == 0){
-    freq = frequence;
-  }else if(finalOctave ==1){
-    freq = frequence<<1;
-  }else if(finalOctave == 3){
-    freq = frequence<<2;
-  }else if(finalOctave == 4){
-    freq = frequence<<3;
-  }else if(finalOctave == 5){
-    freq = frequence<<4;
-  }else if(finalOctave == 6){
-    freq = frequence<<5;
-  }else if(finalOctave == 7){
-    freq = frequence<<6;
-  }
-  return freq;
-}
+
+
 // technical stuff to play put everything in a library
 static void noteOn(int noteToPlay, Configuration conf, int velocity){
   MIDI.sendNoteOn(noteToPlay + 12*conf.octave, velocity, 1);
@@ -570,7 +544,7 @@ void setup() {
 
   MIDI.begin(1);
   Serial.begin(115200);
-  for (size_t pin = 0; pin < 36; pin++) {
+  for (uint8_t pin = 0; pin < 36; pin++) {
     pinMode(pinButton[pin],INPUT);
     digitalWrite(pinButton[pin],HIGH);
   }
