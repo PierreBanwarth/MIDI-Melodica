@@ -59,7 +59,7 @@ and comment out \#define AUDIO_MODE STANDARD and \#define AUDIO_MODE STANDARD_PL
 http://blog.makezine.com/2008/05/29/makeit-protodac-shield-fo/ .
 Mozzi-users list has a thread on this.
 */
-#define AUDIO_RATE AUDIO_RATE_PLATFORM_DEFAULT
+#define AUDIO_RATE 32768
 //#define AUDIO_RATE 16384 // default on AVR / classic Arduino
 //#define AUDIO_RATE 32768 // default on most other platforms
 //#define AUDIO_RATE 65536 // try on Teensy3/3.1 or other strong cpus

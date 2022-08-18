@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <MIDI.h>
 #include <Wire.h>
+
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 #include "RotaryEncoder.h"// RotaryEncoder v1.5.0 library by Matthais Hertel
@@ -22,10 +23,15 @@
 #include <tables/saw2048_int8.h>
 #include <tables/triangle2048_int8.h>
 #include <tables/square_no_alias_2048_int8.h>
-#include <tables/triangle_valve_2_2048_int8.h>
+#include <tables/triangle_dist_cubed_2048_int8.h>
+
+
 
 #include <mozzi_rand.h>
 #include <ADSR.h>
+
+#define POLYPHONY 36
+#define CONTROL_RATE 2048 // Hz, powers of 2 are most reliable
 
 // 0X3C+SA0 - 0x3C or 0x3D
 #define I2C_ADDRESS 0x3C
@@ -33,12 +39,14 @@
 // Define proper RST_PIN if required.
 #define RST_PIN -1
 
-ADSR <CONTROL_RATE, AUDIO_RATE> envelope; // notre enveloppe
+ADSR <CONTROL_RATE, AUDIO_RATE> envelope[POLYPHONY]; // notre enveloppe
 ADSR <CONTROL_RATE, AUDIO_RATE> envelopeBourdon; // notre enveloppe
-Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> oscil1(SIN2048_DATA);
-Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> oscil2(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> bourdon1(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> bourdon2(SIN2048_DATA);
+
+Oscil<COS2048_NUM_CELLS, AUDIO_RATE> oscil1[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
+Oscil<COS2048_NUM_CELLS, AUDIO_RATE> oscil2[POLYPHONY] = Oscil<COS2048_NUM_CELLS, AUDIO_RATE> (COS2048_DATA);
+
+Oscil <COS2048_NUM_CELLS, AUDIO_RATE> bourdon1(COS2048_DATA);
+Oscil <COS2048_NUM_CELLS, AUDIO_RATE> bourdon2(COS2048_DATA);
 
 SSD1306AsciiWire oled;
 
@@ -181,10 +189,11 @@ static void noteMidiBourdon(uint8_t index, Configuration conf, int velocity){
     oldStatePousser[index] = BUTTON_RELEASED;
   }
 }
-static void noteOnSynth(int frequence, Configuration conf){
-  oscil1.setFreq(getOctaveValueToMultiplyForOsc(conf.octaveOsc1, frequence, conf.octave));
-  oscil2.setFreq(getOctaveValueToMultiplyForOsc(conf.octaveOsc2, frequence, conf.octave));
-  envelope.noteOn(); // on joue la note
+
+static void noteOnSynth(int index, int frequence, Configuration conf){
+  oscil1[index].setFreq(getOctaveValueToMultiplyForOsc(conf.octaveOsc1, frequence, conf.octave));
+  oscil2[index].setFreq(getOctaveValueToMultiplyForOsc(conf.octaveOsc2, frequence, conf.octave));
+  envelope[index].noteOn(); // on joue la note
 }
 static void noteOnBourdonSynth(int frequence, Configuration conf){
   bourdon1.setFreq(getOctaveValueToMultiplyForOsc(conf.octaveBourdon1, frequence, conf.octave));
@@ -214,7 +223,7 @@ static int noteSynth(uint8_t sens_soufflet, uint8_t index, Configuration conf){
             oldStateTirer[index] = BUTTON_RELEASED;
           }
         }
-        noteOnSynth(noteSynthA, conf);
+        noteOnSynth(index, noteSynthA, conf);
       }
       else
       { // on tire sur le soufflet et on appuie sur le bouton
@@ -226,7 +235,7 @@ static int noteSynth(uint8_t sens_soufflet, uint8_t index, Configuration conf){
             oldStatePousser[index] = BUTTON_RELEASED;
           }
         }
-        noteOnSynth(noteSynthB, conf);
+        noteOnSynth(index, noteSynthB, conf);
       }
       return 1;
     }
@@ -234,11 +243,12 @@ static int noteSynth(uint8_t sens_soufflet, uint8_t index, Configuration conf){
     {
       if (oldStatePousser[index] == BUTTON_PRESSED)
       {
+        envelope[index].noteOff();
         oldStatePousser[index] = BUTTON_RELEASED;
       }
       if (oldStateTirer[index] == BUTTON_PRESSED)
       {
-        // on appuie pas sur le bouton ma
+        envelope[index].noteOff();
         oldStateTirer[index] = BUTTON_RELEASED;
       }
       return 0;
@@ -287,66 +297,26 @@ static void bourdonSetup(){
   envelopeBourdon.setTimes(0,0,0,0);
   envelopeBourdon.noteOn();
 }
-// Menu selection and setup the play
-void updateControl(){
-  byte attack_level = conf.attackTheme;
-  byte decay_level = 255;
-
-  uint8_t attack = 0;
-  uint8_t decay = 0;
-  uint8_t release_ms = 0; // times for the attack, decay, and release of envelope
-  uint8_t sustain  = 0; //sustain time set to zero so notes can be played as long as key is presssed without being effect by previus touch
-  byte pousserTirerState = 0;
-  envelope.setReleaseLevel(0);
-  envelope.setADLevels(attack_level,decay_level);
-  envelope.setTimes(attack,decay,sustain,release_ms);
-  bourdonSetup();
-
-
-  uint8_t onOffSynth = 0;
-  uint8_t onOffBourdon = 0;
-  pousserTirerState = digitalRead(pousserTirer);
-  for (int i = 0; i < 36; i++)
-  {
-    if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
-      onOffBourdon += noteSynthBourdon(pousserTirerState, i, conf);
-    }else{
-      onOffSynth += noteSynth(pousserTirerState, i, conf);
-    }
-  }
-  if(onOffSynth == 0){
-    envelope.noteOff();
-  }
-  if(onOffBourdon == 0){
-    envelopeBourdon.noteOff();
-  }
-}
 int updateAudio(){
-  long note = (long)envelope.next() * (oscil1.next()+oscil2.next());
-  long noteBourdon =  (long)envelopeBourdon.next() * (bourdon1.next()+bourdon2.next());
-  return (note + noteBourdon) >>9;
+  long note = 0;
+  for (byte i = 0; i < POLYPHONY; i++){
+    //        1     +       7 + 8 + 1
+    note += (long)envelope[i].next() * (oscil1[i].next()+oscil2[i].next())>>9;
+  }
+  long noteBourdon =  (long)envelopeBourdon.next() * (bourdon1.next()+bourdon2.next()) >>8;
+  return (note + noteBourdon)>>1;
 }
 
-static const int8_t* getWaveFromInt(int i){
-  if(i==1){
-    return(SIN2048_DATA);
-  }else if(i==2){
-    return(COS2048_DATA);
-  }else if(i==3){
-    return(TRIANGLE2048_DATA);
-  }else if(i==4){
-    return(SAW2048_DATA);
-  }else{
-    return(SQUARE_NO_ALIAS_2048_DATA);
-  }
-}
 static void setPresets(int i){
   conf = newPresets[i];
-  oscil1.setTable(getWaveFromInt(conf.getOsc1()));
-  oscil2.setTable(getWaveFromInt(conf.getOsc2()));
+  for(byte z = 0; z < POLYPHONY; z++){
+    oscil1[z].setTable(getWaveFromInt(conf.getOsc1()));
+    oscil2[z].setTable(getWaveFromInt(conf.getOsc2()));
+  }
   bourdon1.setTable(getWaveFromInt(conf.getBrd1()));
   bourdon2.setTable(getWaveFromInt(conf.getBrd2()));
 }
+
 static int menuSelectorSwitch(int newPos, int menuActiveItem){
 
   if(menuActiveItem==OCTAVE){
@@ -478,11 +448,15 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
   }else if(menuActiveItem==OSCILLATOR){
     if(newPos%6 != 5){
       if(oscillator == 1){
-        oscil1.setTable(getWaveFromInt(newPos%6));
+        for(byte z = 0; z < POLYPHONY; z++){
+          oscil1[z].setTable(getWaveFromInt(newPos%6));
+        }
         conf.activeOsc1 = newPos%6;
 
       }else if(oscillator == 2){
-        oscil2.setTable(getWaveFromInt(newPos%6));
+        for(byte z = 0; z < POLYPHONY; z++){
+          oscil2[z].setTable(getWaveFromInt(newPos%6));
+        }
         conf.activeOsc2 = newPos%6;
 
       }else if(oscillator == 3){
@@ -495,8 +469,10 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
 
       }else if (oscillator == 5){
         conf.setAllOsc(newPos%6);
-        oscil1.setTable(getWaveFromInt(newPos%6));
-        oscil2.setTable(getWaveFromInt(newPos%6));
+        for(byte z = 0; z < POLYPHONY; z++){
+          oscil1[z].setTable(getWaveFromInt(newPos%6));
+          oscil2[z].setTable(getWaveFromInt(newPos%6));
+        }
         bourdon1.setTable(getWaveFromInt(newPos%6));
         bourdon2.setTable(getWaveFromInt(newPos%6));
       }
@@ -508,7 +484,6 @@ static int menuSelectorSwitch(int newPos, int menuActiveItem){
   }
   return menuActiveItem;
 }
-
 static void menuSelector(){
   encoder.tick();
   int newPos = encoder.getPosition();
@@ -525,6 +500,41 @@ static void menuSelector(){
   }
   stateButtonEncoder = state;
 }
+// Menu selection and setup the play
+void updateControl(){
+
+  byte attack_level = conf.attackTheme;
+  byte decay_level = 255;
+
+  uint8_t attack = 0;
+  uint8_t decay = 0;
+  uint8_t release_ms = 0; // times for the attack, decay, and release of envelope
+  uint8_t sustain  = 0; //sustain time set to zero so notes can be played as long as key is presssed without being effect by previus touch
+  byte pousserTirerState = 0;
+
+  for(byte z = 0; z < POLYPHONY; z++){
+    envelope[z].setReleaseLevel(0);
+    envelope[z].setADLevels(attack_level,decay_level);
+    envelope[z].setTimes(attack,decay,sustain,release_ms);
+  }
+  bourdonSetup();
+
+
+  uint8_t onOffSynth = 0;
+  uint8_t onOffBourdon = 0;
+  pousserTirerState = digitalRead(pousserTirer);
+  for (int i = 0; i < 36; i++)
+  {
+    if(pinButton[i] == 52 || pinButton[i] == 53 || pinButton[i] == 34 || pinButton[i] == 36 || pinButton[i] == 37 || pinButton[i] == 39 ){
+      onOffBourdon += noteSynthBourdon(pousserTirerState, i, conf);
+    }else{
+      onOffSynth += noteSynth(pousserTirerState, i, conf);
+    }
+  }
+  if(onOffBourdon == 0){
+    envelopeBourdon.noteOff();
+  }
+}
 
 void setup() {
   startMozzi();
@@ -536,7 +546,9 @@ void setup() {
   encoderPosition = encoder.getPosition();
   // for testing function
   Wire.begin();
-  Wire.setClock(400000L);
+  Wire.setClock(10000L);
+
+
 
   oled.begin(&Adafruit128x64, I2C_ADDRESS);
   oled.setFont(Adafruit5x7);
@@ -553,15 +565,12 @@ void setup() {
 void loop() {
 
   byte pousserTirerState;
-  indexMenu++;
-  if(indexMenu==10){
-    menuSelector();
-    indexMenu = 0;
-  }
+  menuSelector();
+
   audioHook();
   if(mode == MODE_MIDI){
     for (byte i = 0; i < 36; i++){
-      menuSelector();
+      // menuSelector();
       if(mode_midi == DRUM){
         noteMidiDrum(i, 127);
       }else{

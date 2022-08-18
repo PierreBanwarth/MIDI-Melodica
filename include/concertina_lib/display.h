@@ -35,7 +35,7 @@
     SSD1306AsciiWire oled
   );
 
-  const char *keyNames[23] = {
+  String keyNames[23] = {
     "Sol#/Do#",
     "La/Re",
     "Sib/Re#",
@@ -60,7 +60,7 @@
     "Fa/Sib",
     "Fa#/Si"
   };
-  const char *waveFormNames[5] = {
+  String waveFormNames[5] = {
     "Sin",
     "Cos",
     "Tri",

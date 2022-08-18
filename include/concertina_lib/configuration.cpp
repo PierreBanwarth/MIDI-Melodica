@@ -35,6 +35,7 @@ Configuration::Configuration(
 String Configuration::getName(){
   return presetName;
 }
+
 void Configuration::setOctaveOsc(int8_t a, int8_t b, int8_t c, int8_t d){
   octaveOsc1 = a;
   octaveOsc2 = b;

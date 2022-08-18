@@ -78,7 +78,8 @@ extern SSD1306AsciiWire displayAttackSwitch(uint8_t attack, uint8_t newPos, SSD1
 extern SSD1306AsciiWire displayPresetsMenu(uint8_t newPos, SSD1306AsciiWire oled){
   for(int i=0; i<7; i++){
     oled.print(" ");
-    oled.println(newPresets[i].getName());
+    String name = newPresets[i].getName();
+    oled.println(name);
   }
   oled.println("  Back");
   oled.setCursor(0, (newPos%8));
