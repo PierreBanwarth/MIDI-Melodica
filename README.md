@@ -1,6 +1,8 @@
 <img src="https://user-images.githubusercontent.com/7162775/191379148-af449447-4c98-4340-b313-ac48eb72af3b.png"  width="250">
 
 # MIDI Melodica concertina Keyboard.
+[Journal de developpement ici](https://github.com/PierreBanwarth/MIDI-Accordina/blob/main/journal.md)
+
 
 the first version was made thanks to
 https://www.koopinstruments.com/instrument-projects/melodicade-mx
